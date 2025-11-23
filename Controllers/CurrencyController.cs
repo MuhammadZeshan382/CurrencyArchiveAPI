@@ -414,15 +414,6 @@ public class CurrencyController : ControllerBase
             ));
         }
 
-        var daysDifference = endDate.DayNumber - startDate.DayNumber;
-        if (daysDifference > 365)
-        {
-            return BadRequest(ApiResponse<object>.FailureResponse(
-                "Date range exceeds maximum",
-                new[] { "Maximum timeframe is 365 days" }
-            ));
-        }
-
         var baseCurrency = string.IsNullOrWhiteSpace(baseParam) ? "EUR" : baseParam.Trim().ToUpperInvariant();
 
         IEnumerable<string>? symbolList = null;
