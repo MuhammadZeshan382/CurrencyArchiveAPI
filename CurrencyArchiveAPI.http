@@ -75,6 +75,31 @@ GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-11-15&e
 
 ###
 
+### Fluctuation - Basic (EUR base, 2 days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2018-02-25&end_date=2018-02-26
+
+###
+
+### Fluctuation - With Symbols (EUR -> USD, JPY)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2018-02-25&end_date=2018-02-26&symbols=USD,JPY
+
+###
+
+### Fluctuation - Custom Base (GBP -> USD, EUR, CAD)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-31&base=GBP&symbols=USD,EUR,CAD
+
+###
+
+### Fluctuation - One Month Range
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-10-01&end_date=2024-10-31&base=USD
+
+###
+
+### Fluctuation - Recent Week
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-11-15&end_date=2024-11-22
+
+###
+
 ### Test Invalid Date Format (should return 400)
 GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/24-12-2013
 
