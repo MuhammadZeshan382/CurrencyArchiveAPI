@@ -72,4 +72,15 @@ public interface ICurrencyConversionService
     /// <param name="symbols">Optional list of currency codes to filter results.</param>
     /// <returns>List of rolling window data with statistical measures (average, min, max, stddev, variance).</returns>
     List<Models.RollingWindow> GetRollingAverage(DateOnly startDate, DateOnly endDate, int windowSize, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
+
+    /// <summary>
+    /// Analyzes currency volatility and statistical metrics over a date range.
+    /// Calculates min, max, average, standard deviation, variance, annualized volatility, and coefficient of variation.
+    /// </summary>
+    /// <param name="startDate">Start date of the analysis period.</param>
+    /// <param name="endDate">End date of the analysis period.</param>
+    /// <param name="baseCurrency">Base currency code (default: EUR).</param>
+    /// <param name="symbols">Optional list of currency codes to filter results.</param>
+    /// <returns>Dictionary mapping currency codes to comprehensive volatility metrics.</returns>
+    Dictionary<string, Models.CurrencyVolatilityMetrics> GetVolatilityAnalysis(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
 }
