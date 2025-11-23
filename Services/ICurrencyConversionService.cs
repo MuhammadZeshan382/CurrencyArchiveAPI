@@ -51,4 +51,15 @@ public interface ICurrencyConversionService
     /// <param name="symbols">Optional list of currency codes to filter results.</param>
     /// <returns>Dictionary mapping date strings (YYYY-MM-DD) to currency rate dictionaries.</returns>
     Dictionary<string, Dictionary<string, decimal>> GetTimeseries(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
+
+    /// <summary>
+    /// Gets fluctuation data showing how currencies changed between two dates.
+    /// Maximum timeframe is 365 days.
+    /// </summary>
+    /// <param name="startDate">Start date of the fluctuation period.</param>
+    /// <param name="endDate">End date of the fluctuation period.</param>
+    /// <param name="baseCurrency">Base currency code (default: EUR).</param>
+    /// <param name="symbols">Optional list of currency codes to filter results.</param>
+    /// <returns>Dictionary mapping currency codes to fluctuation data (start_rate, end_rate, change, change_pct).</returns>
+    Dictionary<string, Models.CurrencyFluctuation> GetFluctuation(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
 }
