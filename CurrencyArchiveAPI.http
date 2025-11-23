@@ -110,6 +110,31 @@ GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rate/XYZ?date=2024-01-01
 
 ###
 
+### Rolling Average - Basic (3-day window, EUR base)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2025-01-01&end_date=2025-01-30&window_size=3
+
+###
+
+### Rolling Average - With Symbols (7-day window, USD base, PKR currency)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-01-01&end_date=2024-01-31&window_size=7&base=USD&symbols=PKR
+
+###
+
+### Rolling Average - Multiple Currencies (5-day window)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-10-01&end_date=2024-10-31&window_size=5&base=EUR&symbols=USD,GBP,JPY
+
+###
+
+### Rolling Average - Custom Base (14-day window, GBP base)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-06-01&end_date=2024-06-30&window_size=14&base=GBP
+
+###
+
+### Rolling Average - Short Window (1-day, shows daily rates with stats)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-11-01&end_date=2024-11-10&window_size=1&symbols=USD,EUR
+
+###
+
 ### Test Date Not Found (should return 404)
 GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/1990-01-01
 
