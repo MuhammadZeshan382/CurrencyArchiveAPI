@@ -385,7 +385,7 @@ public class CurrencyConversionService : ICurrencyConversionService
                 
                 // Calculate variance and standard deviation
                 var variance = currencyRates.Count > 1 
-                    ? currencyRates.Select(r => (double)Math.Pow((double)(r - average), 2)).Average()
+                    ? currencyRates.Sum(r => (double)Math.Pow((double)(r - average), 2)) / currencyRates.Count
                     : 0;
                 var stdDev = (decimal)Math.Sqrt(variance);
 
