@@ -1,0 +1,91 @@
+@CurrencyArchiveAPI_HostAddress = https://localhost:7268
+
+### Health Check
+GET {{CurrencyArchiveAPI_HostAddress}}/api/health
+
+###
+
+### Get Dataset Info
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/info
+
+###
+
+### Get Single Exchange Rate (EUR -> USD)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rate/USD?date=2024-01-01
+
+###
+
+### Get Available Currencies for Date
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/available?date=2024-01-01
+
+###
+
+### Get All Rates for Date (EUR base)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rates?date=2024-01-01
+
+###
+
+### Historical Rates - Basic (EUR base, all currencies)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2013-12-24
+
+###
+
+### Historical Rates - Custom Base (GBP)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2013-12-24?base=GBP
+
+###
+
+### Historical Rates - Custom Base with Symbols
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2013-12-24?base=GBP&symbols=USD,CAD,EUR
+
+###
+
+### Historical Rates - Recent Date with USD base
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2024-01-01?base=USD&symbols=EUR,GBP,JPY,CAD
+
+###
+
+### Historical Rates - Symbol Filter Only
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2024-11-22?symbols=USD,GBP,CHF
+
+###
+
+### Timeseries - Basic (EUR base, 25 days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2012-05-01&end_date=2012-05-25
+
+###
+
+### Timeseries - Custom Base (EUR)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2012-05-01&end_date=2012-05-25&base=EUR
+
+###
+
+### Timeseries - Custom Base with Symbols (EUR -> USD, AUD, CAD)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2012-05-01&end_date=2012-05-25&base=EUR&symbols=USD,AUD,CAD
+
+###
+
+### Timeseries - GBP base with selected currencies
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31&base=GBP&symbols=USD,EUR,JPY
+
+###
+
+### Timeseries - Short range (1 week)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-11-15&end_date=2024-11-22
+
+###
+
+### Test Invalid Date Format (should return 400)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/24-12-2013
+
+###
+
+### Test Currency Not Found (should return 404)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rate/XYZ?date=2024-01-01
+
+###
+
+### Test Date Not Found (should return 404)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/1990-01-01
+
+###

@@ -53,10 +53,14 @@ namespace CurrencyArchiveAPI
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Currency Archive API v1");
+                    options.RoutePrefix = "swagger";
+                });
             }
 
-            // Global exception handling
+            // Global exception handling (must be first in pipeline)
             app.UseGlobalExceptionHandler();
 
             app.UseHttpsRedirection();
