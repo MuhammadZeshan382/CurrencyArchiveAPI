@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using CurrencyArchiveAPI.Models;
 using CurrencyArchiveAPI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -5,10 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace CurrencyArchiveAPI.Controllers;
 
 /// <summary>
-/// API controller for currency exchange rate operations.
+/// API controller for all currency exchange rate operations.
+/// Provides access to individual rates, historical data, timeseries, and monitoring.
 /// </summary>
 [ApiController]
-[Route("api/v1/currency")]
+[ApiVersion("1.0")]
 public class CurrencyController : ControllerBase
 {
     private readonly ICurrencyDataService _dataService;

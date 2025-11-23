@@ -1,4 +1,5 @@
 
+using Asp.Versioning;
 using CurrencyArchiveAPI.Extensions;
 using CurrencyArchiveAPI.Middleware;
 
@@ -12,6 +13,18 @@ namespace CurrencyArchiveAPI
 
             // Add services to the container
             builder.Services.AddCurrencyServices();
+            
+            // Configure API versioning
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+                options.ApiVersionReader = Asp.Versioning.ApiVersionReader.Combine(
+                    new Asp.Versioning.UrlSegmentApiVersionReader()
+                );
+            }).AddMvc();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
@@ -20,8 +33,18 @@ namespace CurrencyArchiveAPI
                 {
                     Title = "Currency Archive API",
                     Version = "v1",
-                    Description = "High-performance API for historical currency exchange rates (1999-2025)"
+                    Description = "High-performance REST API providing historical currency exchange rates from 1999-2025. " +
+                                  "All data (~9,500 days, 170+ currencies) is loaded into memory for instant access. " +
+                                  "Supports flexible base currency conversion and symbol filtering."
                 });
+
+                // Include XML comments for Swagger documentation
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath);
+                }
             });
 
             var app = builder.Build();
