@@ -184,30 +184,35 @@ public class CurrencyConversionService : ICurrencyConversionService
             throw new ArgumentException("End date must be greater than or equal to start date");
         }
 
-        var result = new Dictionary<string, Dictionary<string, decimal>>();
+        var result = new System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<string, decimal>>();
+        var dates = new List<DateOnly>();
         var currentDate = startDate;
 
-        // Iterate through each day in the range
+        // Pre-generate all dates
         while (currentDate <= endDate)
+        {
+            dates.Add(currentDate);
+            currentDate = currentDate.AddDays(1);
+        }
+
+        // Process dates in parallel
+        Parallel.ForEach(dates, date =>
         {
             try
             {
-                var ratesForDate = GetHistoricalRates(currentDate, baseCurrency, symbols);
+                var ratesForDate = GetHistoricalRates(date, baseCurrency, symbols);
                 if (ratesForDate.Count > 0)
                 {
-                    result[currentDate.ToString("yyyy-MM-dd")] = ratesForDate;
+                    result[date.ToString("yyyy-MM-dd")] = ratesForDate;
                 }
             }
             catch (KeyNotFoundException)
             {
                 // Skip dates with no data (weekends, holidays)
-                _logger.LogDebug("No data available for {Date}", currentDate);
             }
+        });
 
-            currentDate = currentDate.AddDays(1);
-        }
-
-        return result;
+        return new Dictionary<string, Dictionary<string, decimal>>(result.OrderBy(x => x.Key));
     }
 
     public Dictionary<string, Models.CurrencyFluctuation> GetFluctuation(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null)
