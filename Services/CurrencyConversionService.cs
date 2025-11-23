@@ -346,15 +346,12 @@ public class CurrencyConversionService : ICurrencyConversionService
                     var ratesForDate = GetHistoricalRates(date, baseCurrency, symbols);
                     windowRatesByDate[date] = ratesForDate;
                 }
-                catch (KeyNotFoundException)
-                {
-                    continue;
-                }
+                catch (KeyNotFoundException) { }
             }
 
             if (windowRatesByDate.Count == 0)
             {
-                continue;
+                return;
             }
 
             // Get all currencies present in this window
