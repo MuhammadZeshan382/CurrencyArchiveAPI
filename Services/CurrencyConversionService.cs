@@ -215,4 +215,70 @@ public class CurrencyConversionService : ICurrencyConversionService
 
         return result;
     }
+
+    public Dictionary<string, Models.CurrencyFluctuation> GetFluctuation(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null)
+    {
+        // Validate date range
+        if (endDate < startDate)
+        {
+            throw new ArgumentException("End date must be greater than or equal to start date");
+        }
+
+        var daysDifference = endDate.DayNumber - startDate.DayNumber;
+        if (daysDifference > 365)
+        {
+            throw new ArgumentException("Maximum timeframe is 365 days");
+        }
+
+        // Get rates for start and end dates
+        Dictionary<string, decimal> startRates;
+        Dictionary<string, decimal> endRates;
+
+        try
+        {
+            startRates = GetHistoricalRates(startDate, baseCurrency, symbols);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            throw new KeyNotFoundException($"No exchange rates available for start date {startDate:yyyy-MM-dd}", ex);
+        }
+
+        try
+        {
+            endRates = GetHistoricalRates(endDate, baseCurrency, symbols);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            throw new KeyNotFoundException($"No exchange rates available for end date {endDate:yyyy-MM-dd}", ex);
+        }
+
+        var result = new Dictionary<string, Models.CurrencyFluctuation>();
+
+        // Get all currencies present in both start and end dates
+        var allCurrencies = startRates.Keys.Union(endRates.Keys).ToHashSet();
+
+        foreach (var currency in allCurrencies)
+        {
+            // Skip if currency missing from either date
+            if (!startRates.ContainsKey(currency) || !endRates.ContainsKey(currency))
+            {
+                continue;
+            }
+
+            var startRate = startRates[currency];
+            var endRate = endRates[currency];
+            var change = endRate - startRate;
+            var changePct = startRate != 0 ? (change / startRate) * 100 : 0;
+
+            result[currency] = new Models.CurrencyFluctuation
+            {
+                StartRate = Math.Round(startRate, 6),
+                EndRate = Math.Round(endRate, 6),
+                Change = Math.Round(change, 4),
+                ChangePct = Math.Round(changePct, 4)
+            };
+        }
+
+        return result;
+    }
 }
