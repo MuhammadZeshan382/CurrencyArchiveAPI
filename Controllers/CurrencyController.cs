@@ -273,7 +273,7 @@ public class CurrencyController : ControllerBase
     #region Timeseries Endpoint
 
     /// <summary>
-    /// Gets daily historical exchange rates between two dates (max 365 days).
+    /// Gets daily historical exchange rates between two dates.
     /// </summary>
     /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
     /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
@@ -375,7 +375,7 @@ public class CurrencyController : ControllerBase
     #region Fluctuation Endpoint
 
     /// <summary>
-    /// Gets currency fluctuation data between two dates (max 365 days).
+    /// Gets currency fluctuation data between two dates.
     /// Shows start rate, end rate, absolute change, and percentage change.
     /// </summary>
     /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>

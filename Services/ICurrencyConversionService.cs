@@ -43,7 +43,6 @@ public interface ICurrencyConversionService
 
     /// <summary>
     /// Gets timeseries data (daily rates) between two dates with optional base currency and symbol filtering.
-    /// Maximum timeframe is 365 days.
     /// </summary>
     /// <param name="startDate">Start date of the timeseries.</param>
     /// <param name="endDate">End date of the timeseries.</param>
@@ -54,7 +53,6 @@ public interface ICurrencyConversionService
 
     /// <summary>
     /// Gets fluctuation data showing how currencies changed between two dates.
-    /// Maximum timeframe is 365 days.
     /// </summary>
     /// <param name="startDate">Start date of the fluctuation period.</param>
     /// <param name="endDate">End date of the fluctuation period.</param>
