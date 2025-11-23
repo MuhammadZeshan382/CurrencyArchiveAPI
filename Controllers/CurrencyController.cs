@@ -646,20 +646,19 @@ public class CurrencyController : ControllerBase
 
     #endregion
 
-    #region Volatility Analysis Endpoint
+    #region Financial Metrics Endpoint
 
     /// <summary>
-    /// Analyzes currency volatility and statistical metrics over a date range.
-    /// Provides comprehensive analysis including min, max, average, standard deviation, variance,
-    /// annualized volatility, coefficient of variation, and price range metrics.
+    /// Analyzes comprehensive financial metrics and risk indicators for currencies over a date range.
+    /// Provides returns, volatility, drawdown, Sharpe ratio, VaR, momentum, SMA, Z-score, correlations, and rolling statistics.
     /// </summary>
     /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
     /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
     /// <param name="baseParam">Optional base currency (default: EUR)</param>
     /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
-    /// <returns>Volatility analysis response with comprehensive statistical metrics for each currency</returns>
-    [HttpGet("api/v{version:apiVersion}/volatility")]
-    public IActionResult GetVolatilityAnalysis(
+    /// <returns>Financial metrics response with comprehensive analytics for each currency</returns>
+    [HttpGet("api/v{version:apiVersion}/metrics")]
+    public IActionResult GetFinancialMetrics(
         [FromQuery] string start_date,
         [FromQuery] string end_date,
         [FromQuery(Name = "base")] string? baseParam = null,
@@ -728,18 +727,18 @@ public class CurrencyController : ControllerBase
         }
 
         _logger.LogInformation(
-            "Volatility analysis requested: Start={StartDate}, End={EndDate}, Base={Base}, Symbols={Symbols}",
+            "Financial metrics requested: Start={StartDate}, End={EndDate}, Base={Base}, Symbols={Symbols}",
             start_date,
             end_date,
             baseCurrency,
             symbols ?? "all"
         );
 
-        Dictionary<string, Models.CurrencyVolatilityMetrics> volatilityMetrics;
+        Dictionary<string, Models.CurrencyVolatilityMetrics> financialMetrics;
 
         try
         {
-            volatilityMetrics = _conversionService.GetVolatilityAnalysis(startDate, endDate, baseCurrency, symbolList);
+            financialMetrics = _conversionService.GetFinancialMetrics(startDate, endDate, baseCurrency, symbolList);
         }
         catch (ArgumentException ex)
         {
@@ -764,23 +763,23 @@ public class CurrencyController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during volatility analysis");
+            _logger.LogError(ex, "Error during financial metrics calculation");
             return StatusCode(500, ApiResponse<object>.FailureResponse(
                 "Internal server error",
-                new[] { "An error occurred while processing the volatility analysis" }
+                new[] { "An error occurred while processing the financial metrics" }
             ));
         }
 
-        if (volatilityMetrics.Count == 0)
+        if (financialMetrics.Count == 0)
         {
             return NotFound(ApiResponse<object>.FailureResponse(
                 "No data found",
-                new[] { $"No currency data available for volatility analysis in the date range {start_date} to {end_date}" }
+                new[] { $"No currency data available for financial analysis in the date range {start_date} to {end_date}" }
             ));
         }
 
         // Calculate total data points from first currency (they should all have same count)
-        var dataPoints = volatilityMetrics.Values.FirstOrDefault()?.DataPoints ?? 0;
+        var dataPoints = financialMetrics.Values.FirstOrDefault()?.DataPoints ?? 0;
 
         var response = new Models.VolatilityAnalysisResponse
         {
@@ -788,12 +787,12 @@ public class CurrencyController : ControllerBase
             EndDate = end_date,
             Base = baseCurrency,
             DataPoints = dataPoints,
-            Currencies = volatilityMetrics
+            Currencies = financialMetrics
         };
 
         return Ok(ApiResponse<Models.VolatilityAnalysisResponse>.SuccessResponse(
             response,
-            $"Volatility analysis completed: {volatilityMetrics.Count} currencies analyzed over {dataPoints} trading days"
+            $"Financial metrics analysis completed: {financialMetrics.Count} currencies analyzed over {dataPoints} trading days"
         ));
     }
 

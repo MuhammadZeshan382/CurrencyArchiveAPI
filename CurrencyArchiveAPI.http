@@ -167,47 +167,47 @@ GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/1990-01-01
 
 ###
 
-### Volatility Analysis - Basic (30 days, EUR base, all currencies)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-01-01&end_date=2024-01-31
+### Financial Metrics - Basic (30 days, EUR base, all currencies)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-01-01&end_date=2024-01-31
 
 ###
 
-### Volatility Analysis - Year-Long Analysis (2024 full year, major currencies)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,GBP,JPY,CHF,CAD,AUD
+### Financial Metrics - Year-Long Analysis (2024 full year, major currencies)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,GBP,JPY,CHF,CAD,AUD
 
 ###
 
-### Volatility Analysis - Custom Base (USD base, emerging markets)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-06-01&end_date=2024-12-31&base=USD&symbols=INR,BRL,MXN,ZAR,TRY
+### Financial Metrics - Custom Base (USD base, emerging markets)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-06-01&end_date=2024-12-31&base=USD&symbols=INR,BRL,MXN,ZAR,TRY
 
 ###
 
-### Volatility Analysis - Quarterly Analysis (Q3 2024)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-07-01&end_date=2024-09-30&symbols=EUR,USD,GBP
+### Financial Metrics - Quarterly Analysis (Q3 2024)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-07-01&end_date=2024-09-30&symbols=EUR,USD,GBP
 
 ###
 
-### Volatility Analysis - Short Period (7 days, high frequency)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-11-01&end_date=2024-11-07&base=EUR&symbols=USD,JPY
+### Financial Metrics - Short Period (7 days, high frequency)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-11-01&end_date=2024-11-07&base=EUR&symbols=USD,JPY
 
 ###
 
-### Volatility Analysis - Multi-Year (2022-2024, crypto and fiat)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2022-01-01&end_date=2024-12-31&symbols=USD,BTC,ETH
+### Financial Metrics - Multi-Year (2022-2024, crypto and fiat)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2022-01-01&end_date=2024-12-31&symbols=USD,BTC,ETH
 
 ###
 
-### Volatility Analysis - Professional Metrics (90 days, shows Sharpe, VaR, Beta, Correlations)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-09-01&end_date=2024-11-30&symbols=USD,GBP,JPY,EUR
+### Financial Metrics - Professional Analysis (90 days, Sharpe, VaR, Correlations, Rolling)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-09-01&end_date=2024-11-30&symbols=USD,GBP,JPY,EUR
 
 ###
 
-### Volatility Analysis - Rolling Metrics Test (180+ days for all rolling windows)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-05-01&end_date=2024-11-30&base=USD&symbols=GBP,CHF
+### Financial Metrics - Rolling Windows Test (180+ days for all rolling windows)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-05-01&end_date=2024-11-30&base=USD&symbols=GBP,CHF
 
 ###
 
-### Volatility Analysis - Momentum & SMA Test (252+ days for 12M momentum and SMA200)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/volatility?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,EUR,GBP,JPY,CAD
+### Financial Metrics - Momentum & SMA Test (252+ days for 12M momentum and SMA200)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,EUR,GBP,JPY,CAD
 
 ###

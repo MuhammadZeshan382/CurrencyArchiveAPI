@@ -410,7 +410,7 @@ public class CurrencyConversionService : ICurrencyConversionService
         return windows.Where(w => w != null).ToList();
     }
 
-    public Dictionary<string, Models.CurrencyVolatilityMetrics> GetVolatilityAnalysis(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null)
+    public Dictionary<string, Models.CurrencyVolatilityMetrics> GetFinancialMetrics(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null)
     {
         // Validate date range
         if (endDate < startDate)

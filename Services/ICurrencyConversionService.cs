@@ -74,13 +74,13 @@ public interface ICurrencyConversionService
     List<Models.RollingWindow> GetRollingAverage(DateOnly startDate, DateOnly endDate, int windowSize, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
 
     /// <summary>
-    /// Analyzes currency volatility and statistical metrics over a date range.
-    /// Calculates min, max, average, standard deviation, variance, annualized volatility, and coefficient of variation.
+    /// Analyzes comprehensive financial metrics and risk indicators for currencies over a date range.
+    /// Calculates returns, volatility, drawdown, Sharpe ratio, VaR, momentum, correlations, and rolling statistics.
     /// </summary>
     /// <param name="startDate">Start date of the analysis period.</param>
     /// <param name="endDate">End date of the analysis period.</param>
     /// <param name="baseCurrency">Base currency code (default: EUR).</param>
     /// <param name="symbols">Optional list of currency codes to filter results.</param>
-    /// <returns>Dictionary mapping currency codes to comprehensive volatility metrics.</returns>
-    Dictionary<string, Models.CurrencyVolatilityMetrics> GetVolatilityAnalysis(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
+    /// <returns>Dictionary mapping currency codes to comprehensive financial metrics.</returns>
+    Dictionary<string, Models.CurrencyVolatilityMetrics> GetFinancialMetrics(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
 }
