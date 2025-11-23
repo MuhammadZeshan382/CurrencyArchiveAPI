@@ -27,6 +27,127 @@ public class CurrencyController : ControllerBase
         _logger = logger;
     }
 
+    #region Currency Conversion Endpoint
+
+    /// <summary>
+    /// Converts an amount from one currency to another using exchange rates.
+    /// </summary>
+    /// <param name="from">Source currency code (e.g., GBP)</param>
+    /// <param name="to">Target currency code (e.g., JPY)</param>
+    /// <param name="amount">Amount to convert</param>
+    /// <param name="date">Optional date in YYYY-MM-DD format. If not specified, uses most recent available data.</param>
+    /// <returns>Conversion result with converted amount and exchange rate</returns>
+    [HttpGet("api/v{version:apiVersion}/convert")]
+    public IActionResult ConvertCurrency(
+        [FromQuery] string from,
+        [FromQuery] string to,
+        [FromQuery] decimal amount,
+        [FromQuery] string? date = null)
+    {
+        // Validate required parameters
+        if (string.IsNullOrWhiteSpace(from))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Missing required parameter",
+                new[] { "Parameter 'from' is required" }
+            ));
+        }
+
+        if (string.IsNullOrWhiteSpace(to))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Missing required parameter",
+                new[] { "Parameter 'to' is required" }
+            ));
+        }
+
+        if (amount <= 0)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid amount",
+                new[] { "Amount must be greater than 0" }
+            ));
+        }
+
+        // Determine the date to use
+        DateOnly conversionDate;
+        if (string.IsNullOrWhiteSpace(date))
+        {
+            // Use most recent date
+            var (_, maxDate) = _dataService.GetDateRange();
+            conversionDate = maxDate;
+        }
+        else
+        {
+            // Parse provided date
+            if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out conversionDate))
+            {
+                return BadRequest(ApiResponse<object>.FailureResponse(
+                    "Invalid date format",
+                    new[] { "Date must be in YYYY-MM-DD format (e.g., 2024-01-01)" }
+                ));
+            }
+        }
+
+        var fromCurrency = from.Trim().ToUpperInvariant();
+        var toCurrency = to.Trim().ToUpperInvariant();
+
+        _logger.LogInformation(
+            "Conversion requested: {Amount} {From} to {To} on {Date}",
+            amount,
+            fromCurrency,
+            toCurrency,
+            conversionDate);
+
+        try
+        {
+            // Perform the conversion
+            var convertedAmount = _conversionService.Convert(fromCurrency, toCurrency, conversionDate, amount);
+
+            // Calculate the exchange rate (result / amount)
+            var exchangeRate = amount != 0 ? convertedAmount / amount : 0;
+
+            var response = new ConvertResponse
+            {
+                Date = conversionDate.ToString("yyyy-MM-dd"),
+                From = fromCurrency,
+                To = toCurrency,
+                Amount = amount,
+                Result = Math.Round(convertedAmount, 6),
+                Rate = Math.Round(exchangeRate, 6)
+            };
+
+            return Ok(ApiResponse<ConvertResponse>.SuccessResponse(
+                response,
+                $"Converted {amount} {fromCurrency} to {convertedAmount:F6} {toCurrency}"
+            ));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "Exchange rate not found",
+                new[] { ex.Message }
+            ));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid conversion request",
+                new[] { ex.Message }
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during currency conversion");
+            return StatusCode(500, ApiResponse<object>.FailureResponse(
+                "Internal server error",
+                new[] { "An error occurred while processing the conversion" }
+            ));
+        }
+    }
+
+    #endregion
+
     #region Currency Query Endpoints
 
 

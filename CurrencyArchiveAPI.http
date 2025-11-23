@@ -5,6 +5,31 @@ GET {{CurrencyArchiveAPI_HostAddress}}/api/health
 
 ###
 
+### Convert Currency - Basic (GBP to JPY, most recent date)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=GBP&to=JPY&amount=25
+
+###
+
+### Convert Currency - Historical (USD to EUR on specific date)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=100&date=2024-01-01
+
+###
+
+### Convert Currency - Same Currency
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=EUR&to=EUR&amount=50
+
+###
+
+### Convert Currency - Multiple Conversions (USD to GBP historical)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=GBP&amount=1000&date=2023-06-15
+
+###
+
+### Convert Currency - Small Amount
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=EUR&to=USD&amount=0.01
+
+###
+
 ### Get Dataset Info
 GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/info
 

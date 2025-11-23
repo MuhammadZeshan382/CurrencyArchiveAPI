@@ -27,6 +27,42 @@ public record ExchangeRateResponse
 }
 
 /// <summary>
+/// Response model for currency conversion endpoint.
+/// </summary>
+public record ConvertResponse
+{
+    /// <summary>
+    /// The date used for the conversion rate.
+    /// </summary>
+    public string Date { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The source currency code.
+    /// </summary>
+    public string From { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The target currency code.
+    /// </summary>
+    public string To { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The original amount to convert.
+    /// </summary>
+    public decimal Amount { get; init; }
+
+    /// <summary>
+    /// The converted amount in target currency.
+    /// </summary>
+    public decimal Result { get; init; }
+
+    /// <summary>
+    /// The exchange rate used for conversion.
+    /// </summary>
+    public decimal Rate { get; init; }
+}
+
+/// <summary>
 /// Response model for available currencies query.
 /// </summary>
 public record AvailableCurrenciesResponse
