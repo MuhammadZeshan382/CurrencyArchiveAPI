@@ -411,12 +411,6 @@ public record CurrencyVolatilityMetrics
     public decimal? SMA200 { get; init; }
 
     /// <summary>
-    /// Beta coefficient against USD (if available).
-    /// Measures systematic risk relative to USD.
-    /// </summary>
-    public decimal? BetaVsUSD { get; init; }
-
-    /// <summary>
     /// Rolling window metrics for 30, 60, 90, 180-day periods.
     /// </summary>
     public RollingMetrics? Rolling { get; init; }

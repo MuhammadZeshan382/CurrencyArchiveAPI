@@ -558,9 +558,6 @@ public class CurrencyConversionService : ICurrencyConversionService
             // 8. Rolling Metrics (30, 60, 90, 180 days)
             var rollingMetrics = CalculateRollingMetrics(rates, dailyReturns);
 
-            // 11. Beta vs USD (calculate after all currencies processed)
-            decimal? betaVsUSD = null;
-
             result[currency] = new Models.CurrencyVolatilityMetrics
             {
                 // Existing metrics
@@ -593,7 +590,6 @@ public class CurrencyConversionService : ICurrencyConversionService
                 Momentum12M = momentum12M.HasValue ? Math.Round(momentum12M.Value * 100, 4) : null,
                 SMA50 = sma50.HasValue ? Math.Round(sma50.Value, 6) : null,
                 SMA200 = sma200.HasValue ? Math.Round(sma200.Value, 6) : null,
-                BetaVsUSD = betaVsUSD,
                 Rolling = rollingMetrics
             };
         });
@@ -629,23 +625,6 @@ public class CurrencyConversionService : ICurrencyConversionService
                 if (correlations.Count > 0)
                 {
                     result[currency] = metrics with { Correlations = correlations };
-                }
-
-                // 11. Calculate Beta vs USD if USD data available
-                if (currency != "USD" && currencyReturnsDict.ContainsKey("USD"))
-                {
-                    var beta = CalculateBeta(
-                        currencyReturnsDict[currency], 
-                        currencyReturnsDict["USD"]
-                    );
-                    
-                    if (!double.IsNaN(beta))
-                    {
-                        result[currency] = result[currency] with 
-                        { 
-                            BetaVsUSD = Math.Round((decimal)beta, 4) 
-                        };
-                    }
                 }
             }
         }
@@ -875,29 +854,4 @@ public class CurrencyConversionService : ICurrencyConversionService
         return denominator != 0 ? sumXY / denominator : double.NaN;
     }
 
-    private static double CalculateBeta(double[] assetReturns, double[] marketReturns)
-    {
-        if (assetReturns.Length != marketReturns.Length || assetReturns.Length < 2)
-            return double.NaN;
-        
-        var n = assetReturns.Length;
-        var meanAsset = CalculateMean(assetReturns);
-        var meanMarket = CalculateMean(marketReturns);
-        
-        var covariance = 0.0;
-        var marketVariance = 0.0;
-        
-        for (int i = 0; i < n; i++)
-        {
-            var assetDiff = assetReturns[i] - meanAsset;
-            var marketDiff = marketReturns[i] - meanMarket;
-            covariance += assetDiff * marketDiff;
-            marketVariance += marketDiff * marketDiff;
-        }
-        
-        covariance /= n;
-        marketVariance /= n;
-        
-        return marketVariance != 0 ? covariance / marketVariance : double.NaN;
-    }
 }
