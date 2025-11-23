@@ -294,40 +294,45 @@ public class CurrencyConversionService : ICurrencyConversionService
             throw new ArgumentException($"Window size ({windowSize} days) cannot exceed date range ({totalDays} days)");
         }
 
-        var result = new List<Models.RollingWindow>();
-
-        // Get all available dates in the range with data
-        var allDatesWithData = new List<DateOnly>();
+        // Get all available dates in the range with data (pre-fetch)
+        var allDatesWithData = new System.Collections.Concurrent.ConcurrentBag<DateOnly>();
+        var dates = new List<DateOnly>();
         var currentDate = startDate;
         
         while (currentDate <= endDate)
         {
-            try
-            {
-                var rates = GetHistoricalRates(currentDate, baseCurrency, symbols);
-                if (rates.Count > 0)
-                {
-                    allDatesWithData.Add(currentDate);
-                }
-            }
-            catch (KeyNotFoundException)
-            {
-                // Skip dates without data
-                _logger.LogDebug("No data available for {Date}", currentDate);
-            }
-
+            dates.Add(currentDate);
             currentDate = currentDate.AddDays(1);
         }
 
-        if (allDatesWithData.Count < windowSize)
+        // Parallel fetch of available dates
+        Parallel.ForEach(dates, date =>
         {
-            throw new InvalidOperationException($"Insufficient data points. Found {allDatesWithData.Count}, need at least {windowSize}");
+            try
+            {
+                var rates = GetHistoricalRates(date, baseCurrency, symbols);
+                if (rates.Count > 0)
+                {
+                    allDatesWithData.Add(date);
+                }
+            }
+            catch (KeyNotFoundException) { }
+        });
+
+        var sortedDates = allDatesWithData.OrderBy(d => d).ToList();
+
+        if (sortedDates.Count < windowSize)
+        {
+            throw new InvalidOperationException($"Insufficient data points. Found {sortedDates.Count}, need at least {windowSize}");
         }
 
-        // Calculate rolling windows using sliding window technique
-        for (int i = 0; i <= allDatesWithData.Count - windowSize; i++)
+        // Calculate rolling windows using sliding window technique (parallel)
+        var windowCount = sortedDates.Count - windowSize + 1;
+        var windows = new Models.RollingWindow[windowCount];
+
+        Parallel.For(0, windowCount, i =>
         {
-            var windowDates = allDatesWithData.Skip(i).Take(windowSize).ToList();
+            var windowDates = sortedDates.Skip(i).Take(windowSize).ToList();
             var windowStart = windowDates.First();
             var windowEnd = windowDates.Last();
 
