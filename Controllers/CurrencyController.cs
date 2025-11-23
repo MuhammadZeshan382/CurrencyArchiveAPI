@@ -479,7 +479,7 @@ public class CurrencyController : ControllerBase
             symbols ?? "all"
         );
 
-        List<RollingWindow> rollingWindows;
+        List<Models.RollingWindow> rollingWindows;
 
         try
         {
@@ -508,7 +508,7 @@ public class CurrencyController : ControllerBase
             ));
         }
 
-        var response = new RollingAverageResponse
+        var response = new Models.RollingAverageResponse
         {
             StartDate = start_date,
             EndDate = end_date,
@@ -517,7 +517,7 @@ public class CurrencyController : ControllerBase
             Windows = rollingWindows
         };
 
-        return Ok(ApiResponse<RollingAverageResponse>.SuccessResponse(
+        return Ok(ApiResponse<Models.RollingAverageResponse>.SuccessResponse(
             response,
             $"Rolling average calculated: {rollingWindows.Count} windows with {window_size}-day periods"
         ));
