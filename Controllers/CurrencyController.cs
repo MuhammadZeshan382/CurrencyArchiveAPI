@@ -390,4 +390,138 @@ public class CurrencyController : ControllerBase
     }
 
     #endregion
+
+    #region Rolling Average Endpoint
+
+    /// <summary>
+    /// Calculates rolling averages (Simple Moving Average) for currencies over a date range.
+    /// Uses sliding window technique to compute statistical measures including mean, min, max, standard deviation, and variance.
+    /// </summary>
+    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
+    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
+    /// <param name="window_size">Window size in days for rolling average calculation (required, minimum 1)</param>
+    /// <param name="baseParam">Optional base currency (default: EUR)</param>
+    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
+    /// <returns>Rolling average response with statistical measures for each window</returns>
+    [HttpGet("api/v{version:apiVersion}/rolling-average")]
+    public IActionResult GetRollingAverage(
+        [FromQuery] string start_date,
+        [FromQuery] string end_date,
+        [FromQuery] int window_size,
+        [FromQuery(Name = "base")] string? baseParam = null,
+        [FromQuery] string? symbols = null)
+    {
+        if (!DateOnly.TryParseExact(start_date, "yyyy-MM-dd", out var startDate))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid start_date format",
+                new[] { "start_date must be in YYYY-MM-DD format (e.g., 2025-01-01)" }
+            ));
+        }
+
+        if (!DateOnly.TryParseExact(end_date, "yyyy-MM-dd", out var endDate))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid end_date format",
+                new[] { "end_date must be in YYYY-MM-DD format (e.g., 2025-01-30)" }
+            ));
+        }
+
+        if (endDate < startDate)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid date range",
+                new[] { "end_date must be greater than or equal to start_date" }
+            ));
+        }
+
+        if (window_size < 1)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid window_size",
+                new[] { "window_size must be at least 1 day" }
+            ));
+        }
+
+        var totalDays = endDate.DayNumber - startDate.DayNumber + 1;
+        if (window_size > totalDays)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid window_size",
+                new[] { $"window_size ({window_size} days) cannot exceed date range ({totalDays} days)" }
+            ));
+        }
+
+        var baseCurrency = string.IsNullOrWhiteSpace(baseParam) ? "EUR" : baseParam.Trim().ToUpperInvariant();
+
+        IEnumerable<string>? symbolList = null;
+        if (!string.IsNullOrWhiteSpace(symbols))
+        {
+            symbolList = symbols
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim().ToUpperInvariant())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            if (!symbolList.Any())
+            {
+                symbolList = null;
+            }
+        }
+
+        _logger.LogInformation(
+            "Rolling average requested: StartDate={StartDate}, EndDate={EndDate}, WindowSize={WindowSize}, Base={Base}, Symbols={Symbols}",
+            start_date,
+            end_date,
+            window_size,
+            baseCurrency,
+            symbols ?? "all"
+        );
+
+        List<RollingWindow> rollingWindows;
+
+        try
+        {
+            rollingWindows = _conversionService.GetRollingAverage(startDate, endDate, window_size, baseCurrency, symbolList);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid parameters",
+                new[] { ex.Message }
+            ));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "Insufficient data",
+                new[] { ex.Message }
+            ));
+        }
+
+        if (rollingWindows.Count == 0)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "No data found",
+                new[] { $"No sufficient data available for rolling average calculation in the date range {start_date} to {end_date}" }
+            ));
+        }
+
+        var response = new RollingAverageResponse
+        {
+            StartDate = start_date,
+            EndDate = end_date,
+            Base = baseCurrency,
+            WindowSize = window_size,
+            Windows = rollingWindows
+        };
+
+        return Ok(ApiResponse<RollingAverageResponse>.SuccessResponse(
+            response,
+            $"Rolling average calculated: {rollingWindows.Count} windows with {window_size}-day periods"
+        ));
+    }
+
+    #endregion
 }
