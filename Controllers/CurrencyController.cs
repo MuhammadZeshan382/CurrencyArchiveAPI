@@ -645,4 +645,157 @@ public class CurrencyController : ControllerBase
     }
 
     #endregion
+
+    #region Volatility Analysis Endpoint
+
+    /// <summary>
+    /// Analyzes currency volatility and statistical metrics over a date range.
+    /// Provides comprehensive analysis including min, max, average, standard deviation, variance,
+    /// annualized volatility, coefficient of variation, and price range metrics.
+    /// </summary>
+    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
+    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
+    /// <param name="baseParam">Optional base currency (default: EUR)</param>
+    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
+    /// <returns>Volatility analysis response with comprehensive statistical metrics for each currency</returns>
+    [HttpGet("api/v{version:apiVersion}/volatility")]
+    public IActionResult GetVolatilityAnalysis(
+        [FromQuery] string start_date,
+        [FromQuery] string end_date,
+        [FromQuery(Name = "base")] string? baseParam = null,
+        [FromQuery] string? symbols = null)
+    {
+        // Validate start_date
+        if (string.IsNullOrWhiteSpace(start_date))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Missing required parameter",
+                new[] { "Parameter 'start_date' is required" }
+            ));
+        }
+
+        if (!DateOnly.TryParseExact(start_date, "yyyy-MM-dd", out var startDate))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid start_date format",
+                new[] { "start_date must be in YYYY-MM-DD format (e.g., 2024-01-01)" }
+            ));
+        }
+
+        // Validate end_date
+        if (string.IsNullOrWhiteSpace(end_date))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Missing required parameter",
+                new[] { "Parameter 'end_date' is required" }
+            ));
+        }
+
+        if (!DateOnly.TryParseExact(end_date, "yyyy-MM-dd", out var endDate))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid end_date format",
+                new[] { "end_date must be in YYYY-MM-DD format (e.g., 2024-12-31)" }
+            ));
+        }
+
+        // Validate date range
+        if (endDate < startDate)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid date range",
+                new[] { "end_date must be greater than or equal to start_date" }
+            ));
+        }
+
+        var baseCurrency = string.IsNullOrWhiteSpace(baseParam) ? "EUR" : baseParam.Trim().ToUpperInvariant();
+
+        // Parse and validate symbols
+        IEnumerable<string>? symbolList = null;
+        if (!string.IsNullOrWhiteSpace(symbols))
+        {
+            symbolList = symbols
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim().ToUpperInvariant())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            if (!symbolList.Any())
+            {
+                symbolList = null;
+            }
+        }
+
+        _logger.LogInformation(
+            "Volatility analysis requested: Start={StartDate}, End={EndDate}, Base={Base}, Symbols={Symbols}",
+            start_date,
+            end_date,
+            baseCurrency,
+            symbols ?? "all"
+        );
+
+        Dictionary<string, Models.CurrencyVolatilityMetrics> volatilityMetrics;
+
+        try
+        {
+            volatilityMetrics = _conversionService.GetVolatilityAnalysis(startDate, endDate, baseCurrency, symbolList);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid parameters",
+                new[] { ex.Message }
+            ));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "Insufficient data",
+                new[] { ex.Message }
+            ));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "Data not found",
+                new[] { ex.Message }
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during volatility analysis");
+            return StatusCode(500, ApiResponse<object>.FailureResponse(
+                "Internal server error",
+                new[] { "An error occurred while processing the volatility analysis" }
+            ));
+        }
+
+        if (volatilityMetrics.Count == 0)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "No data found",
+                new[] { $"No currency data available for volatility analysis in the date range {start_date} to {end_date}" }
+            ));
+        }
+
+        // Calculate total data points from first currency (they should all have same count)
+        var dataPoints = volatilityMetrics.Values.FirstOrDefault()?.DataPoints ?? 0;
+
+        var response = new Models.VolatilityAnalysisResponse
+        {
+            StartDate = start_date,
+            EndDate = end_date,
+            Base = baseCurrency,
+            DataPoints = dataPoints,
+            Currencies = volatilityMetrics
+        };
+
+        return Ok(ApiResponse<Models.VolatilityAnalysisResponse>.SuccessResponse(
+            response,
+            $"Volatility analysis completed: {volatilityMetrics.Count} currencies analyzed over {dataPoints} trading days"
+        ));
+    }
+
+    #endregion
 }
