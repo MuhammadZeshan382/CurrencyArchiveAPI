@@ -396,17 +396,17 @@ public class CurrencyConversionService : ICurrencyConversionService
                     StdDev = Math.Round(stdDev, 6),
                     Variance = Math.Round((decimal)variance, 8)
                 };
-            }
+            });
 
-            result.Add(new Models.RollingWindow
+            windows[i] = new Models.RollingWindow
             {
                 WindowStart = windowStart.ToString("yyyy-MM-dd"),
                 WindowEnd = windowEnd.ToString("yyyy-MM-dd"),
                 DataPoints = windowRatesByDate.Count,
-                Rates = windowRates
-            });
-        }
+                Rates = new Dictionary<string, Models.RollingAverageData>(windowRates)
+            };
+        });
 
-        return result;
+        return windows.Where(w => w != null).ToList();
     }
 }
