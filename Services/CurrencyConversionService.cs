@@ -360,25 +360,22 @@ public class CurrencyConversionService : ICurrencyConversionService
                 .Distinct()
                 .ToHashSet();
 
-            var windowRates = new Dictionary<string, Models.RollingAverageData>();
+            var windowRates = new System.Collections.Concurrent.ConcurrentDictionary<string, Models.RollingAverageData>();
 
-            foreach (var currency in allCurrencies)
+            // Parallel calculation of statistics per currency
+            Parallel.ForEach(allCurrencies, currency =>
             {
-                // Collect all rates for this currency in the window
                 var currencyRates = new List<decimal>();
                 
                 foreach (var (_, rates) in windowRatesByDate)
                 {
-                    if (rates.ContainsKey(currency))
+                    if (rates.TryGetValue(currency, out var rate))
                     {
-                        currencyRates.Add(rates[currency]);
+                        currencyRates.Add(rate);
                     }
                 }
 
-                if (currencyRates.Count == 0)
-                {
-                    continue;
-                }
+                if (currencyRates.Count == 0) return;
 
                 // Calculate statistical measures
                 var average = currencyRates.Average();
