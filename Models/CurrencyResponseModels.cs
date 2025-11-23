@@ -137,3 +137,56 @@ public record TimeseriesResponse
     /// </summary>
     public Dictionary<string, Dictionary<string, decimal>> Rates { get; init; } = new();
 }
+
+/// <summary>
+/// Response model for fluctuation endpoint.
+/// Shows how currencies fluctuate between two dates.
+/// </summary>
+public record FluctuationResponse
+{
+    /// <summary>
+    /// Start date of the fluctuation period (YYYY-MM-DD).
+    /// </summary>
+    public string StartDate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// End date of the fluctuation period (YYYY-MM-DD).
+    /// </summary>
+    public string EndDate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Base currency for all rates.
+    /// </summary>
+    public string Base { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Dictionary of currency codes to their fluctuation data.
+    /// </summary>
+    public Dictionary<string, CurrencyFluctuation> Rates { get; init; } = new();
+}
+
+/// <summary>
+/// Fluctuation data for a single currency.
+/// </summary>
+public record CurrencyFluctuation
+{
+    /// <summary>
+    /// Exchange rate at the start date.
+    /// </summary>
+    public decimal StartRate { get; init; }
+
+    /// <summary>
+    /// Exchange rate at the end date.
+    /// </summary>
+    public decimal EndRate { get; init; }
+
+    /// <summary>
+    /// Absolute change in rate (end_rate - start_rate).
+    /// </summary>
+    public decimal Change { get; init; }
+
+    /// <summary>
+    /// Percentage change ((change / start_rate) * 100).
+    /// </summary>
+    public decimal ChangePct { get; init; }
+}
