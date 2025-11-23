@@ -228,6 +228,244 @@ public record CurrencyFluctuation
 }
 
 /// <summary>
+/// Response model for volatility analysis endpoint.
+/// Provides comprehensive statistical analysis including min, max, and volatility metrics.
+/// </summary>
+public record VolatilityAnalysisResponse
+{
+    /// <summary>
+    /// Start date of the analysis period (YYYY-MM-DD).
+    /// </summary>
+    public string StartDate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// End date of the analysis period (YYYY-MM-DD).
+    /// </summary>
+    public string EndDate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Base currency for all rates.
+    /// </summary>
+    public string Base { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Number of trading days analyzed.
+    /// </summary>
+    public int DataPoints { get; init; }
+
+    /// <summary>
+    /// Dictionary of currency volatility metrics.
+    /// </summary>
+    public Dictionary<string, CurrencyVolatilityMetrics> Currencies { get; init; } = new();
+}
+
+/// <summary>
+/// Comprehensive volatility and statistical metrics for a single currency.
+/// </summary>
+public record CurrencyVolatilityMetrics
+{
+    /// <summary>
+    /// Minimum exchange rate during the period.
+    /// </summary>
+    public decimal Min { get; init; }
+
+    /// <summary>
+    /// Maximum exchange rate during the period.
+    /// </summary>
+    public decimal Max { get; init; }
+
+    /// <summary>
+    /// Average (mean) exchange rate over the period.
+    /// </summary>
+    public decimal Average { get; init; }
+
+    /// <summary>
+    /// Opening rate (first available date in period).
+    /// </summary>
+    public decimal OpenRate { get; init; }
+
+    /// <summary>
+    /// Closing rate (last available date in period).
+    /// </summary>
+    public decimal CloseRate { get; init; }
+
+    /// <summary>
+    /// Absolute change from open to close.
+    /// </summary>
+    public decimal Change { get; init; }
+
+    /// <summary>
+    /// Percentage change from open to close.
+    /// </summary>
+    public decimal ChangePct { get; init; }
+
+    /// <summary>
+    /// Standard deviation of daily rates (population).
+    /// Measures the dispersion of rates around the mean.
+    /// </summary>
+    public decimal StdDev { get; init; }
+
+    /// <summary>
+    /// Variance of daily rates (population).
+    /// Square of standard deviation.
+    /// </summary>
+    public decimal Variance { get; init; }
+
+    /// <summary>
+    /// Coefficient of Variation (CV = StdDev / Mean * 100).
+    /// Normalized measure of volatility as a percentage of the mean.
+    /// Higher CV indicates higher relative volatility.
+    /// </summary>
+    public decimal CoefficientOfVariation { get; init; }
+
+    /// <summary>
+    /// Annualized volatility (StdDev(log returns) * sqrt(252)).
+    /// Standard financial metric assuming 252 trading days per year.
+    /// Expressed as a percentage.
+    /// </summary>
+    public decimal AnnualizedVolatility { get; init; }
+
+    /// <summary>
+    /// Range as percentage of mean ((Max - Min) / Mean * 100).
+    /// Indicates price range relative to average price.
+    /// </summary>
+    public decimal RangePct { get; init; }
+
+    /// <summary>
+    /// Number of data points used in calculations.
+    /// </summary>
+    public int DataPoints { get; init; }
+
+    // ===== New Professional Financial Metrics =====
+
+    /// <summary>
+    /// Average daily return (arithmetic mean of daily returns).
+    /// </summary>
+    public decimal AvgDailyReturn { get; init; }
+
+    /// <summary>
+    /// Cumulative return over the period ((price_end / price_start) - 1).
+    /// </summary>
+    public decimal CumulativeReturn { get; init; }
+
+    /// <summary>
+    /// Annualized return ((1 + cumulative)^(365 / days) - 1).
+    /// </summary>
+    public decimal AnnualizedReturn { get; init; }
+
+    /// <summary>
+    /// Daily volatility (standard deviation of daily returns).
+    /// </summary>
+    public decimal DailyVolatility { get; init; }
+
+    /// <summary>
+    /// Maximum drawdown (largest peak-to-trough decline).
+    /// </summary>
+    public decimal MaxDrawdown { get; init; }
+
+    /// <summary>
+    /// Sharpe ratio (risk-adjusted return metric).
+    /// (annualized_return - risk_free_rate) / annualized_volatility
+    /// </summary>
+    public decimal SharpeRatio { get; init; }
+
+    /// <summary>
+    /// Risk-free rate used in Sharpe ratio calculation.
+    /// </summary>
+    public decimal RiskFreeRate { get; init; }
+
+    /// <summary>
+    /// Historical Value at Risk at 95% confidence level.
+    /// </summary>
+    public decimal HistoricalVaR95 { get; init; }
+
+    /// <summary>
+    /// Parametric Value at Risk at 95% confidence level.
+    /// mean - 1.65 * std
+    /// </summary>
+    public decimal ParametricVaR95 { get; init; }
+
+    /// <summary>
+    /// Z-score of current price ((current - mean) / std).
+    /// </summary>
+    public decimal ZScore { get; init; }
+
+    /// <summary>
+    /// 3-month momentum return.
+    /// </summary>
+    public decimal? Momentum3M { get; init; }
+
+    /// <summary>
+    /// 12-month momentum return.
+    /// </summary>
+    public decimal? Momentum12M { get; init; }
+
+    /// <summary>
+    /// 50-day simple moving average.
+    /// </summary>
+    public decimal? SMA50 { get; init; }
+
+    /// <summary>
+    /// 200-day simple moving average.
+    /// </summary>
+    public decimal? SMA200 { get; init; }
+
+    /// <summary>
+    /// Beta coefficient against USD (if available).
+    /// Measures systematic risk relative to USD.
+    /// </summary>
+    public decimal? BetaVsUSD { get; init; }
+
+    /// <summary>
+    /// Rolling window metrics for 30, 60, 90, 180-day periods.
+    /// </summary>
+    public RollingMetrics? Rolling { get; init; }
+
+    /// <summary>
+    /// Correlation coefficients against other currencies (if multiple currencies analyzed).
+    /// </summary>
+    public Dictionary<string, decimal>? Correlations { get; init; }
+}
+
+/// <summary>
+/// Rolling window metrics for multiple time periods.
+/// </summary>
+public record RollingMetrics
+{
+    public RollingPeriodMetrics? Window30D { get; init; }
+    public RollingPeriodMetrics? Window60D { get; init; }
+    public RollingPeriodMetrics? Window90D { get; init; }
+    public RollingPeriodMetrics? Window180D { get; init; }
+}
+
+/// <summary>
+/// Metrics for a specific rolling window period.
+/// </summary>
+public record RollingPeriodMetrics
+{
+    /// <summary>
+    /// Rolling mean price.
+    /// </summary>
+    public decimal Mean { get; init; }
+
+    /// <summary>
+    /// Rolling standard deviation.
+    /// </summary>
+    public decimal StdDev { get; init; }
+
+    /// <summary>
+    /// Rolling return over the window.
+    /// </summary>
+    public decimal Return { get; init; }
+
+    /// <summary>
+    /// Rolling volatility (annualized).
+    /// </summary>
+    public decimal Volatility { get; init; }
+}
+
+
+/// <summary>
 /// Response model for rolling average endpoint.
 /// Provides moving averages for currencies over specified window periods.
 /// </summary>
