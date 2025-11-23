@@ -60,4 +60,16 @@ public interface ICurrencyConversionService
     /// <param name="symbols">Optional list of currency codes to filter results.</param>
     /// <returns>Dictionary mapping currency codes to fluctuation data (start_rate, end_rate, change, change_pct).</returns>
     Dictionary<string, Models.CurrencyFluctuation> GetFluctuation(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
+
+    /// <summary>
+    /// Calculates rolling averages (Simple Moving Average) for currencies over a date range.
+    /// Uses sliding window technique to compute statistical measures for each window period.
+    /// </summary>
+    /// <param name="startDate">Start date of the analysis period.</param>
+    /// <param name="endDate">End date of the analysis period.</param>
+    /// <param name="windowSize">Window size in days for rolling average calculation.</param>
+    /// <param name="baseCurrency">Base currency code (default: EUR).</param>
+    /// <param name="symbols">Optional list of currency codes to filter results.</param>
+    /// <returns>List of rolling window data with statistical measures (average, min, max, stddev, variance).</returns>
+    List<Models.RollingWindow> GetRollingAverage(DateOnly startDate, DateOnly endDate, int windowSize, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
 }
