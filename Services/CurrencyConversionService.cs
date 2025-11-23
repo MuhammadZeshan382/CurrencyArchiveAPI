@@ -536,7 +536,7 @@ public class CurrencyConversionService : ICurrencyConversionService
             var priceStdDev = (decimal)Math.Sqrt((double)priceVariance);
 
             // Coefficient of Variation
-            var coefficientOfVariation = average != 0 ? (priceStdDev / average) * 100 : 0;
+            var coefficientOfVariation = average != 0 ? (priceStdDev / average) : 0;
 
             // Range as percentage of mean
             var rangePct = average != 0 ? ((max - min) / average) * 100 : 0;
