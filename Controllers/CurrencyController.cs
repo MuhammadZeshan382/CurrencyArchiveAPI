@@ -372,6 +372,121 @@ public class CurrencyController : ControllerBase
 
     #endregion
 
+    #region Fluctuation Endpoint
+
+    /// <summary>
+    /// Gets currency fluctuation data between two dates (max 365 days).
+    /// Shows start rate, end rate, absolute change, and percentage change.
+    /// </summary>
+    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
+    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
+    /// <param name="baseParam">Optional base currency (default: EUR)</param>
+    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
+    /// <returns>Fluctuation response with change data for each currency</returns>
+    [HttpGet("api/v{version:apiVersion}/fluctuation")]
+    public IActionResult GetFluctuation(
+        [FromQuery] string start_date,
+        [FromQuery] string end_date,
+        [FromQuery(Name = "base")] string? baseParam = null,
+        [FromQuery] string? symbols = null)
+    {
+        if (!DateOnly.TryParseExact(start_date, "yyyy-MM-dd", out var startDate))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid start_date format",
+                new[] { "start_date must be in YYYY-MM-DD format (e.g., 2018-02-25)" }
+            ));
+        }
+
+        if (!DateOnly.TryParseExact(end_date, "yyyy-MM-dd", out var endDate))
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid end_date format",
+                new[] { "end_date must be in YYYY-MM-DD format (e.g., 2018-02-26)" }
+            ));
+        }
+
+        if (endDate < startDate)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Invalid date range",
+                new[] { "end_date must be greater than or equal to start_date" }
+            ));
+        }
+
+        var daysDifference = endDate.DayNumber - startDate.DayNumber;
+        if (daysDifference > 365)
+        {
+            return BadRequest(ApiResponse<object>.FailureResponse(
+                "Date range exceeds maximum",
+                new[] { "Maximum timeframe is 365 days" }
+            ));
+        }
+
+        var baseCurrency = string.IsNullOrWhiteSpace(baseParam) ? "EUR" : baseParam.Trim().ToUpperInvariant();
+
+        IEnumerable<string>? symbolList = null;
+        if (!string.IsNullOrWhiteSpace(symbols))
+        {
+            symbolList = symbols
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim().ToUpperInvariant())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            if (!symbolList.Any())
+            {
+                symbolList = null;
+            }
+        }
+
+        _logger.LogInformation(
+            "Fluctuation requested: StartDate={StartDate}, EndDate={EndDate}, Base={Base}, Symbols={Symbols}",
+            start_date,
+            end_date,
+            baseCurrency,
+            symbols ?? "all"
+        );
+
+        Dictionary<string, CurrencyFluctuation> fluctuationData;
+        
+        try
+        {
+            fluctuationData = _conversionService.GetFluctuation(startDate, endDate, baseCurrency, symbolList);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "No data found",
+                new[] { ex.Message }
+            ));
+        }
+
+        if (fluctuationData.Count == 0)
+        {
+            return NotFound(ApiResponse<object>.FailureResponse(
+                "No data found",
+                new[] { $"No common currency data available for the date range {start_date} to {end_date}" }
+            ));
+        }
+
+        var response = new FluctuationResponse
+        {
+            StartDate = start_date,
+            EndDate = end_date,
+            Base = baseCurrency,
+            Rates = fluctuationData
+        };
+
+        return Ok(ApiResponse<FluctuationResponse>.SuccessResponse(
+            response,
+            $"Fluctuation data retrieved: {fluctuationData.Count} currencies from {start_date} to {end_date}"
+        ));
+    }
+
+    #endregion
+
     #region Health Check Endpoint
 
     /// <summary>
