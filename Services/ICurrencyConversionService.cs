@@ -30,4 +30,25 @@ public interface ICurrencyConversionService
     /// <param name="endDate">End date of the range.</param>
     /// <returns>Dictionary mapping dates to exchange rates.</returns>
     Dictionary<DateOnly, decimal> GetRateHistory(string currency, DateOnly startDate, DateOnly endDate);
+
+    /// <summary>
+    /// Gets historical exchange rates for a specific date with custom base currency.
+    /// Converts all rates from EUR-base to the specified base currency.
+    /// </summary>
+    /// <param name="date">Date for historical rates.</param>
+    /// <param name="baseCurrency">Base currency code (default: EUR).</param>
+    /// <param name="symbols">Optional list of currency codes to filter results.</param>
+    /// <returns>Dictionary of currency codes to exchange rates relative to base currency.</returns>
+    Dictionary<string, decimal> GetHistoricalRates(DateOnly date, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
+
+    /// <summary>
+    /// Gets timeseries data (daily rates) between two dates with optional base currency and symbol filtering.
+    /// Maximum timeframe is 365 days.
+    /// </summary>
+    /// <param name="startDate">Start date of the timeseries.</param>
+    /// <param name="endDate">End date of the timeseries.</param>
+    /// <param name="baseCurrency">Base currency code (default: EUR).</param>
+    /// <param name="symbols">Optional list of currency codes to filter results.</param>
+    /// <returns>Dictionary mapping date strings (YYYY-MM-DD) to currency rate dictionaries.</returns>
+    Dictionary<string, Dictionary<string, decimal>> GetTimeseries(DateOnly startDate, DateOnly endDate, string baseCurrency = "EUR", IEnumerable<string>? symbols = null);
 }
