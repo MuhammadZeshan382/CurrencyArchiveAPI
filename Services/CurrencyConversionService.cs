@@ -184,12 +184,6 @@ public class CurrencyConversionService : ICurrencyConversionService
             throw new ArgumentException("End date must be greater than or equal to start date");
         }
 
-        var daysDifference = endDate.DayNumber - startDate.DayNumber;
-        if (daysDifference > 365)
-        {
-            throw new ArgumentException("Maximum timeframe is 365 days");
-        }
-
         var result = new Dictionary<string, Dictionary<string, decimal>>();
         var currentDate = startDate;
 
@@ -222,12 +216,6 @@ public class CurrencyConversionService : ICurrencyConversionService
         if (endDate < startDate)
         {
             throw new ArgumentException("End date must be greater than or equal to start date");
-        }
-
-        var daysDifference = endDate.DayNumber - startDate.DayNumber;
-        if (daysDifference > 365)
-        {
-            throw new ArgumentException("Maximum timeframe is 365 days");
         }
 
         // Get rates for start and end dates
