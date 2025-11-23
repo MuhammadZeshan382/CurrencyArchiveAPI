@@ -29,50 +29,6 @@ public class CurrencyController : ControllerBase
 
     #region Currency Query Endpoints
 
-    /// <summary>
-    /// Gets the exchange rate for a specific currency on a specific date.
-    /// </summary>
-    /// <param name="currencyCode">Three-letter currency code (e.g., USD, GBP, JPY)</param>
-    /// <param name="date">Date in YYYY-MM-DD format (e.g., 2024-01-01)</param>
-    /// <returns>Exchange rate relative to EUR base currency</returns>
-    [HttpGet("api/v{version:apiVersion}/currency/rate/{currencyCode}")]
-    public IActionResult GetExchangeRate(string currencyCode, [FromQuery] string date)
-    {
-        var code = currencyCode.ToUpperInvariant();
-        
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-        {
-            return BadRequest(ApiResponse<object>.FailureResponse(
-                "Invalid date format",
-                new[] { "Date must be in YYYY-MM-DD format (e.g., 2024-01-01)" }
-            ));
-        }
-        
-        _logger.LogInformation("Exchange rate requested: Currency={Currency}, Date={Date}", code, date);
-
-        var rate = _dataService.GetRate(parsedDate, code);
-        
-        if (rate == null)
-        {
-            return NotFound(ApiResponse<object>.FailureResponse(
-                "Exchange rate not found",
-                new[] { $"No exchange rate available for {code} on {date}" }
-            ));
-        }
-
-        var response = new ExchangeRateResponse
-        {
-            CurrencyCode = code,
-            Date = date,
-            Rate = rate.Value,
-            BaseCurrency = "EUR"
-        };
-
-        return Ok(ApiResponse<ExchangeRateResponse>.SuccessResponse(
-            response,
-            $"Exchange rate retrieved successfully for {code}"
-        ));
-    }
 
     /// <summary>
     /// Gets all available currency codes for a specific date.
@@ -115,85 +71,6 @@ public class CurrencyController : ControllerBase
         ));
     }
 
-    /// <summary>
-    /// Gets all exchange rates for a specific date (EUR-based).
-    /// </summary>
-    /// <param name="date">Date in YYYY-MM-DD format (e.g., 2024-01-01)</param>
-    /// <returns>Dictionary of all currency codes to exchange rates</returns>
-    [HttpGet("api/v{version:apiVersion}/currency/rates")]
-    public IActionResult GetAllRatesForDate([FromQuery] string date)
-    {
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-        {
-            return BadRequest(ApiResponse<object>.FailureResponse(
-                "Invalid date format",
-                new[] { "Date must be in YYYY-MM-DD format (e.g., 2024-01-01)" }
-            ));
-        }
-        
-        _logger.LogInformation("Bulk exchange rates requested for date: {Date}", date);
-
-        var rates = _dataService.GetRatesForDate(parsedDate);
-
-        if (rates == null || rates.Count == 0)
-        {
-            return NotFound(ApiResponse<object>.FailureResponse(
-                "No exchange rates found",
-                new[] { $"No exchange rate data available for {date}" }
-            ));
-        }
-
-        var response = new BulkExchangeRatesResponse
-        {
-            Date = date,
-            BaseCurrency = "EUR",
-            Count = rates.Count,
-            Rates = rates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
-        };
-
-        return Ok(ApiResponse<BulkExchangeRatesResponse>.SuccessResponse(
-            response,
-            $"{rates.Count} exchange rates retrieved for {date}"
-        ));
-    }
-
-    /// <summary>
-    /// Gets metadata about the loaded currency dataset.
-    /// </summary>
-    /// <returns>Information about data coverage and statistics</returns>
-    [HttpGet("api/v{version:apiVersion}/currency/info")]
-    public IActionResult GetDatasetInfo()
-    {
-        if (!_dataService.IsDataLoaded)
-        {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                ApiResponse<object>.FailureResponse(
-                    "Service unavailable",
-                    new[] { "Currency data is not loaded yet" }
-                )
-            );
-        }
-
-        var (minDate, maxDate) = _dataService.GetDateRange();
-
-        var response = new DatasetInfoResponse
-        {
-            IsLoaded = _dataService.IsDataLoaded,
-            TotalDates = _dataService.TotalDatesLoaded,
-            DateRange = new DateRangeInfo
-            {
-                From = minDate.ToString("yyyy-MM-dd"),
-                To = maxDate.ToString("yyyy-MM-dd")
-            }
-        };
-
-        return Ok(ApiResponse<DatasetInfoResponse>.SuccessResponse(
-            response,
-            "Dataset information retrieved successfully"
-        ));
-    }
-
     #endregion
 
     #region Historical Rates Endpoint
@@ -205,9 +82,9 @@ public class CurrencyController : ControllerBase
     /// <param name="baseParam">Optional base currency (default: EUR)</param>
     /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
     /// <returns>Historical rates response with all requested currency rates</returns>
-    [HttpGet("api/v{version:apiVersion}/{date}")]
+    [HttpGet("api/v{version:apiVersion}/historical")]
     public IActionResult GetHistoricalRates(
-        [FromRoute] string date,
+        [FromQuery] string date,
         [FromQuery(Name = "base")] string? baseParam = null,
         [FromQuery] string? symbols = null)
     {
@@ -311,15 +188,7 @@ public class CurrencyController : ControllerBase
             ));
         }
 
-        var daysDifference = endDate.DayNumber - startDate.DayNumber;
-        if (daysDifference > 365)
-        {
-            return BadRequest(ApiResponse<object>.FailureResponse(
-                "Date range exceeds maximum",
-                new[] { "Maximum timeframe is 365 days" }
-            ));
-        }
-
+ 
         var baseCurrency = string.IsNullOrWhiteSpace(baseParam) ? "EUR" : baseParam.Trim().ToUpperInvariant();
 
         IEnumerable<string>? symbolList = null;
