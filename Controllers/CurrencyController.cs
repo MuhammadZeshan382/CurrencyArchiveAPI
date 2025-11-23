@@ -35,7 +35,7 @@ public class CurrencyController : ControllerBase
     /// </summary>
     /// <param name="date">Date in YYYY-MM-DD format (e.g., 2024-01-01)</param>
     /// <returns>List of all currency codes available on the specified date</returns>
-    [HttpGet("api/v{version:apiVersion}/currency/available")]
+    [HttpGet("api/v{version:apiVersion}/currencyavailable")]
     public IActionResult GetAvailableCurrencies([FromQuery] string date)
     {
         if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
