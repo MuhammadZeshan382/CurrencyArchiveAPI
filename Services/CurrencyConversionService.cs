@@ -269,4 +269,140 @@ public class CurrencyConversionService : ICurrencyConversionService
 
         return result;
     }
+
+    public List<Models.RollingWindow> GetRollingAverage(DateOnly startDate, DateOnly endDate, int windowSize, string baseCurrency = "EUR", IEnumerable<string>? symbols = null)
+    {
+        // Validate inputs
+        if (endDate < startDate)
+        {
+            throw new ArgumentException("End date must be greater than or equal to start date");
+        }
+
+        if (windowSize < 1)
+        {
+            throw new ArgumentException("Window size must be at least 1 day");
+        }
+
+        var totalDays = endDate.DayNumber - startDate.DayNumber + 1;
+        if (windowSize > totalDays)
+        {
+            throw new ArgumentException($"Window size ({windowSize} days) cannot exceed date range ({totalDays} days)");
+        }
+
+        var result = new List<Models.RollingWindow>();
+
+        // Get all available dates in the range with data
+        var allDatesWithData = new List<DateOnly>();
+        var currentDate = startDate;
+        
+        while (currentDate <= endDate)
+        {
+            try
+            {
+                var rates = GetHistoricalRates(currentDate, baseCurrency, symbols);
+                if (rates.Count > 0)
+                {
+                    allDatesWithData.Add(currentDate);
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                // Skip dates without data
+                _logger.LogDebug("No data available for {Date}", currentDate);
+            }
+
+            currentDate = currentDate.AddDays(1);
+        }
+
+        if (allDatesWithData.Count < windowSize)
+        {
+            throw new InvalidOperationException($"Insufficient data points. Found {allDatesWithData.Count}, need at least {windowSize}");
+        }
+
+        // Calculate rolling windows using sliding window technique
+        for (int i = 0; i <= allDatesWithData.Count - windowSize; i++)
+        {
+            var windowDates = allDatesWithData.Skip(i).Take(windowSize).ToList();
+            var windowStart = windowDates.First();
+            var windowEnd = windowDates.Last();
+
+            // Collect rates for all dates in this window
+            var windowRatesByDate = new Dictionary<DateOnly, Dictionary<string, decimal>>();
+            
+            foreach (var date in windowDates)
+            {
+                try
+                {
+                    var ratesForDate = GetHistoricalRates(date, baseCurrency, symbols);
+                    windowRatesByDate[date] = ratesForDate;
+                }
+                catch (KeyNotFoundException)
+                {
+                    continue;
+                }
+            }
+
+            if (windowRatesByDate.Count == 0)
+            {
+                continue;
+            }
+
+            // Get all currencies present in this window
+            var allCurrencies = windowRatesByDate.Values
+                .SelectMany(r => r.Keys)
+                .Distinct()
+                .ToHashSet();
+
+            var windowRates = new Dictionary<string, Models.RollingAverageData>();
+
+            foreach (var currency in allCurrencies)
+            {
+                // Collect all rates for this currency in the window
+                var currencyRates = new List<decimal>();
+                
+                foreach (var (_, rates) in windowRatesByDate)
+                {
+                    if (rates.ContainsKey(currency))
+                    {
+                        currencyRates.Add(rates[currency]);
+                    }
+                }
+
+                if (currencyRates.Count == 0)
+                {
+                    continue;
+                }
+
+                // Calculate statistical measures
+                var average = currencyRates.Average();
+                var min = currencyRates.Min();
+                var max = currencyRates.Max();
+                
+                // Calculate variance and standard deviation
+                var variance = currencyRates.Count > 1 
+                    ? currencyRates.Select(r => (double)Math.Pow((double)(r - average), 2)).Average()
+                    : 0;
+                var stdDev = (decimal)Math.Sqrt(variance);
+
+                windowRates[currency] = new Models.RollingAverageData
+                {
+                    Average = Math.Round(average, 6),
+                    Min = Math.Round(min, 6),
+                    Max = Math.Round(max, 6),
+                    StdDev = Math.Round(stdDev, 6),
+                    Variance = Math.Round((decimal)variance, 8)
+                };
+            }
+
+            result.Add(new Models.RollingWindow
+            {
+                WindowStart = windowStart.ToString("yyyy-MM-dd"),
+                WindowEnd = windowEnd.ToString("yyyy-MM-dd"),
+                DataPoints = windowRatesByDate.Count,
+                Rates = windowRates
+            });
+        }
+
+        return result;
+    }
 }
