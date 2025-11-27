@@ -19,7 +19,7 @@ public interface IFinancialAnalyticsService
     /// <returns>Rolling average response with calculated metrics.</returns>
     RollingMetricsResponse GetRollingMetrics(
         string baseCurrency,
-        string targetCurrency,
+        List<string> targetCurrency,
         DateOnly startDate,
         DateOnly endDate,
         int windowSize);

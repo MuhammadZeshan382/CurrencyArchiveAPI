@@ -34,7 +34,7 @@ public class FinancialAnalyticsService : IFinancialAnalyticsService
     /// <inheritdoc/>
     public RollingMetricsResponse GetRollingMetrics(
         string baseCurrency,
-        string targetCurrency,
+        List<string> targetCurrency,
         DateOnly startDate,
         DateOnly endDate,
         int windowSize)
@@ -42,10 +42,9 @@ public class FinancialAnalyticsService : IFinancialAnalyticsService
         _rollingWindowHelper.ValidateWindowParameters(startDate, endDate, windowSize);
 
         var baseCode = baseCurrency.ToUpperInvariant();
-        var targetCode = targetCurrency.ToUpperInvariant();
 
-        var symbols = new List<string> { targetCode };
-        var datesWithData = _rateCollectionHelper.CollectDatesWithData(startDate, endDate, baseCode, symbols);
+        var uppervarianttargetcurrnecy = targetCurrency.Select(x => x.ToUpperInvariant()).ToList();
+        var datesWithData = _rateCollectionHelper.CollectDatesWithData(startDate, endDate, baseCode, uppervarianttargetcurrnecy);
 
         if (datesWithData.Count < windowSize)
         {
@@ -53,7 +52,7 @@ public class FinancialAnalyticsService : IFinancialAnalyticsService
                 $"{AppConstants.ErrorMessages.InsufficientData}. Found {datesWithData.Count}, need at least {windowSize}");
         }
 
-        var windows = _rollingWindowHelper.CalculateRollingWindows(datesWithData, windowSize, baseCode, symbols);
+        var windows = _rollingWindowHelper.CalculateRollingWindows(datesWithData, windowSize, baseCode, uppervarianttargetcurrnecy);
 
         return new RollingMetricsResponse
         {

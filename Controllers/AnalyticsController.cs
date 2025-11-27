@@ -33,7 +33,7 @@ public class AnalyticsController : ControllerBase
     /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
     /// <param name="window_size">Window size in days for rolling average calculation (required, minimum 1)</param>
     /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
+    /// <param name="symbols">Optional comma-separated list of currency codes to filter otherwise default is USD</param>
     /// <returns>Rolling average response with statistical measures for each window</returns>
     [HttpGet("rolling-metrics")]
     public IActionResult GetRollingMetrics(
@@ -65,10 +65,9 @@ public class AnalyticsController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>() { "USD" };
 
-        // For rolling average, use first symbol or default to USD if no symbols provided
-        var targetCurrency = symbolList?.FirstOrDefault() ?? "USD";
+
 
         _logger.LogInformation(
             "Rolling average requested: StartDate={StartDate}, EndDate={EndDate}, WindowSize={WindowSize}, Base={Base}, Target={Target}",
@@ -76,14 +75,14 @@ public class AnalyticsController : ControllerBase
             end_date,
             window_size,
             baseCurrency,
-            targetCurrency
+            symbolList
         );
 
         RollingMetricsResponse response;
 
         try
         {
-            response = _analyticsService.GetRollingMetrics(baseCurrency, targetCurrency, startDate, endDate, window_size);
+            response = _analyticsService.GetRollingMetrics(baseCurrency, symbolList, startDate, endDate, window_size);
         }
         catch (ArgumentException ex)
         {
@@ -146,7 +145,7 @@ public class AnalyticsController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>();
 
         _logger.LogInformation(
             "Financial metrics requested: Start={StartDate}, End={EndDate}, Base={Base}, Symbols={Symbols}",
@@ -160,7 +159,7 @@ public class AnalyticsController : ControllerBase
 
         try
         {
-            response = _analyticsService.GetFinancialMetrics(baseCurrency, symbolList ?? new List<string>(), startDate, endDate);
+            response = _analyticsService.GetFinancialMetrics(baseCurrency, symbolList, startDate, endDate);
         }
         catch (ArgumentException ex)
         {
