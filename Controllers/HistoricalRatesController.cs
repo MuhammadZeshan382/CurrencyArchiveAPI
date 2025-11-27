@@ -100,7 +100,7 @@ public class HistoricalRatesController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList();
 
         _logger.LogInformation(
             "Timeseries requested: StartDate={StartDate}, EndDate={EndDate}, Base={Base}, Symbols={Symbols}",
@@ -110,7 +110,7 @@ public class HistoricalRatesController : ControllerBase
             symbols ?? "all"
         );
 
-        var response = _historicalRatesService.GetTimeseries(baseCurrency, symbolList, startDate, endDate);
+        var response = _historicalRatesService.GetTimeseries(baseCurrency, symbolList ?? new List<string>(), startDate, endDate);
 
         if (response.Rates.Count == 0)
         {
@@ -158,7 +158,7 @@ public class HistoricalRatesController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList();
 
         _logger.LogInformation(
             "Fluctuation requested: StartDate={StartDate}, EndDate={EndDate}, Base={Base}, Symbols={Symbols}",
@@ -172,7 +172,7 @@ public class HistoricalRatesController : ControllerBase
 
         try
         {
-            response = _historicalRatesService.GetFluctuation(baseCurrency, symbolList, startDate, endDate);
+            response = _historicalRatesService.GetFluctuation(baseCurrency, symbolList ?? new List<string>(), startDate, endDate);
         }
         catch (KeyNotFoundException ex)
         {

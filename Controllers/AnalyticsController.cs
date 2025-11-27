@@ -65,19 +65,10 @@ public class AnalyticsController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList();
 
-        // For rolling average, we need at least one target currency
-        if (symbolList.Count == 0)
-        {
-            return BadRequest(ApiResponse<object>.FailureResponse(
-                "Invalid parameters",
-                new[] { "At least one target currency symbol is required for rolling average calculation" }
-            ));
-        }
-
-        // Use the first symbol as the target currency
-        var targetCurrency = symbolList.First();
+        // For rolling average, use first symbol or default to USD if no symbols provided
+        var targetCurrency = symbolList?.FirstOrDefault() ?? "USD";
 
         _logger.LogInformation(
             "Rolling average requested: StartDate={StartDate}, EndDate={EndDate}, WindowSize={WindowSize}, Base={Base}, Target={Target}",
@@ -155,7 +146,7 @@ public class AnalyticsController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList();
 
         _logger.LogInformation(
             "Financial metrics requested: Start={StartDate}, End={EndDate}, Base={Base}, Symbols={Symbols}",
@@ -169,7 +160,7 @@ public class AnalyticsController : ControllerBase
 
         try
         {
-            response = _analyticsService.GetFinancialMetrics(baseCurrency, symbolList, startDate, endDate);
+            response = _analyticsService.GetFinancialMetrics(baseCurrency, symbolList ?? new List<string>(), startDate, endDate);
         }
         catch (ArgumentException ex)
         {
