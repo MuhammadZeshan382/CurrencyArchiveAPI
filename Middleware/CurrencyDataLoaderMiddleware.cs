@@ -29,7 +29,7 @@ public class CurrencyDataLoaderMiddleware
                 if (!_isInitialized)
                 {
                     _logger.LogInformation("Initializing currency data on first request...");
-                    
+
                     if (currencyDataService is CurrencyDataService service)
                     {
                         await service.LoadDataAsync();

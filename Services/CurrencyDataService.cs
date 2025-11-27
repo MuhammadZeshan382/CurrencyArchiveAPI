@@ -1,7 +1,6 @@
+using CurrencyArchiveAPI.Helpers;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
-using System.Globalization;
-using System.Text.Json;
 
 namespace CurrencyArchiveAPI.Services;
 
@@ -12,15 +11,20 @@ public class CurrencyDataService : ICurrencyDataService
 {
     private FrozenDictionary<DateOnly, FrozenDictionary<string, decimal>>? _rates;
     private readonly ILogger<CurrencyDataService> _logger;
+    private readonly DataLoaderHelper _dataLoaderHelper;
     private readonly string _dataPath;
 
     public bool IsDataLoaded => _rates != null;
     public int TotalDatesLoaded => _rates?.Count ?? 0;
 
-    public CurrencyDataService(ILogger<CurrencyDataService> logger, IConfiguration configuration)
+    public CurrencyDataService(
+        ILogger<CurrencyDataService> logger,
+        IConfiguration configuration,
+        DataLoaderHelper dataLoaderHelper)
     {
         _logger = logger;
         _dataPath = configuration["CurrencyDataPath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "Data");
+        _dataLoaderHelper = dataLoaderHelper;
     }
 
     /// <summary>
@@ -58,10 +62,10 @@ public class CurrencyDataService : ICurrencyDataService
         {
             try
             {
-                var date = ParseDateFromPath(file);
+                var date = _dataLoaderHelper.ParseDateFromPath(file);
                 if (date.HasValue)
                 {
-                    var rates = LoadRatesFromFile(file);
+                    var rates = _dataLoaderHelper.LoadRatesFromFile(file);
                     if (rates != null && rates.Count > 0)
                     {
                         tempRates.TryAdd(date.Value, rates);
@@ -96,66 +100,12 @@ public class CurrencyDataService : ICurrencyDataService
             var (minDate, maxDate) = GetDateRange();
             var sampleDate = _rates.Keys.First();
             var currencyCount = _rates[sampleDate].Count;
-            
+
             _logger.LogInformation(
                 "Date range: {MinDate:yyyy-MM-dd} to {MaxDate:yyyy-MM-dd}. " +
                 "Currencies per day: ~{CurrencyCount}",
                 minDate, maxDate, currencyCount
             );
-        }
-    }
-
-    /// <summary>
-    /// Parses date from file path format: Data/{Year}/{Month}/DD-MM-YYYY.json
-    /// </summary>
-    private DateOnly? ParseDateFromPath(string filePath)
-    {
-        try
-        {
-            var fileName = Path.GetFileNameWithoutExtension(filePath);
-            
-            // Try parsing DD-MM-YYYY format
-            if (DateOnly.TryParseExact(fileName, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-            {
-                return date;
-            }
-
-            // Fallback: try other common formats
-            if (DateOnly.TryParse(fileName, out date))
-            {
-                return date;
-            }
-
-            _logger.LogWarning("Unable to parse date from filename: {FileName}", fileName);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Error parsing date from path: {FilePath}", filePath);
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Loads exchange rates from a JSON file.
-    /// </summary>
-    private Dictionary<string, decimal>? LoadRatesFromFile(string filePath)
-    {
-        try
-        {
-            var json = File.ReadAllText(filePath);
-            var rates = JsonSerializer.Deserialize<Dictionary<string, decimal>>(json);
-            return rates;
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Invalid JSON in file: {FilePath}", filePath);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error reading file: {FilePath}", filePath);
-            return null;
         }
     }
 
@@ -181,8 +131,8 @@ public class CurrencyDataService : ICurrencyDataService
             throw new InvalidOperationException("Currency data not loaded");
         }
 
-        return _rates.TryGetValue(date, out var ratesForDate) 
-            ? ratesForDate.Keys 
+        return _rates.TryGetValue(date, out var ratesForDate)
+            ? ratesForDate.Keys
             : Enumerable.Empty<string>();
     }
 

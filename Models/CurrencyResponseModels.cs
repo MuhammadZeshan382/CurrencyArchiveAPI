@@ -228,10 +228,10 @@ public record CurrencyFluctuation
 }
 
 /// <summary>
-/// Response model for volatility analysis endpoint.
+/// Response model for Financial analysis endpoint.
 /// Provides comprehensive statistical analysis including min, max, and volatility metrics.
 /// </summary>
-public record VolatilityAnalysisResponse
+public record FinancialAnalysisResponse
 {
     /// <summary>
     /// Start date of the analysis period (YYYY-MM-DD).
@@ -296,18 +296,21 @@ public record CurrencyVolatilityMetrics
 
     /// <summary>
     /// Percentage change from open to close.
+    /// Expressed as percentage (e.g., 2.50 means 2.50%).
     /// </summary>
     public decimal ChangePct { get; init; }
 
     /// <summary>
     /// Standard deviation of daily rates (population).
     /// Measures the dispersion of rates around the mean.
+    /// Expressed in exchange rate units (e.g., 0.0125 for EUR/USD).
     /// </summary>
     public decimal StdDev { get; init; }
 
     /// <summary>
     /// Variance of daily rates (population).
     /// Square of standard deviation.
+    /// Expressed in exchange rate units squared.
     /// </summary>
     public decimal Variance { get; init; }
 
@@ -315,19 +318,21 @@ public record CurrencyVolatilityMetrics
     /// Coefficient of Variation (CV = StdDev / Mean * 100).
     /// Normalized measure of volatility as a percentage of the mean.
     /// Higher CV indicates higher relative volatility.
+    /// Expressed as percentage (e.g., 5.0 means 5.0%).
     /// </summary>
     public decimal CoefficientOfVariation { get; init; }
 
     /// <summary>
     /// Annualized volatility (StdDev(log returns) * sqrt(252)).
     /// Standard financial metric assuming 252 trading days per year.
-    /// Expressed as a percentage.
+    /// Expressed as percentage (e.g., 12.50 means 12.50% annual volatility).
     /// </summary>
     public decimal AnnualizedVolatility { get; init; }
 
     /// <summary>
     /// Range as percentage of mean ((Max - Min) / Mean * 100).
     /// Indicates price range relative to average price.
+    /// Expressed as percentage (e.g., 15.0 means 15.0%).
     /// </summary>
     public decimal RangePct { get; init; }
 
@@ -340,73 +345,90 @@ public record CurrencyVolatilityMetrics
 
     /// <summary>
     /// Average daily return (arithmetic mean of daily returns).
+    /// Expressed as percentage (e.g., 0.05 means 0.05% per day).
     /// </summary>
     public decimal AvgDailyReturn { get; init; }
 
     /// <summary>
     /// Cumulative return over the period ((price_end / price_start) - 1).
+    /// Expressed as percentage (e.g., 12.50 means 12.50% total return).
     /// </summary>
     public decimal CumulativeReturn { get; init; }
 
     /// <summary>
-    /// Annualized return ((1 + cumulative)^(365 / days) - 1).
+    /// Annualized return ((1 + cumulative)^(252 / days) - 1).
+    /// Expressed as percentage (e.g., 8.75 means 8.75% per year).
     /// </summary>
     public decimal AnnualizedReturn { get; init; }
 
     /// <summary>
     /// Daily volatility (standard deviation of daily returns).
+    /// Expressed as percentage (e.g., 0.45 means 0.45% daily volatility).
     /// </summary>
     public decimal DailyVolatility { get; init; }
 
     /// <summary>
     /// Maximum drawdown (largest peak-to-trough decline).
+    /// Expressed as negative percentage (e.g., -15.75 means -15.75% loss).
     /// </summary>
     public decimal MaxDrawdown { get; init; }
 
     /// <summary>
     /// Sharpe ratio (risk-adjusted return metric).
-    /// (annualized_return - risk_free_rate) / annualized_volatility
+    /// Formula: (annualized_return - risk_free_rate) / annualized_volatility
+    /// Unitless ratio. Higher values indicate better risk-adjusted returns.
+    /// Typical values: >1.0 (excellent), 0.5-1.0 (good), 0-0.5 (acceptable), <0 (poor)
     /// </summary>
     public decimal SharpeRatio { get; init; }
 
     /// <summary>
     /// Risk-free rate used in Sharpe ratio calculation.
+    /// Expressed as decimal (e.g., 0.04 = 4% annual rate).
     /// </summary>
     public decimal RiskFreeRate { get; init; }
 
     /// <summary>
     /// Historical Value at Risk at 95% confidence level.
+    /// Worst expected daily loss with 95% confidence.
+    /// Expressed as negative percentage (e.g., -1.25 means -1.25% daily loss).
     /// </summary>
     public decimal HistoricalVaR95 { get; init; }
 
     /// <summary>
     /// Parametric Value at Risk at 95% confidence level.
-    /// mean - 1.65 * std
+    /// Formula: mean - 1.65 * std (assumes normal distribution)
+    /// Expressed as negative percentage (e.g., -1.18 means -1.18% daily loss).
     /// </summary>
     public decimal ParametricVaR95 { get; init; }
 
     /// <summary>
     /// Z-score of current price ((current - mean) / std).
+    /// Measures how many standard deviations the current price is from mean.
+    /// Unitless (e.g., 1.75 means 1.75 standard deviations above mean).
     /// </summary>
     public decimal ZScore { get; init; }
 
     /// <summary>
-    /// 3-month momentum return.
+    /// 3-month momentum return (63 trading days).
+    /// Expressed as percentage (e.g., 5.25 means 5.25% gain over 3 months).
     /// </summary>
     public decimal? Momentum3M { get; init; }
 
     /// <summary>
-    /// 12-month momentum return.
+    /// 12-month momentum return (252 trading days).
+    /// Expressed as percentage (e.g., 8.50 means 8.50% gain over 12 months).
     /// </summary>
     public decimal? Momentum12M { get; init; }
 
     /// <summary>
     /// 50-day simple moving average.
+    /// Expressed in exchange rate units (e.g., 1.0920 for EUR/USD).
     /// </summary>
     public decimal? SMA50 { get; init; }
 
     /// <summary>
     /// 200-day simple moving average.
+    /// Expressed in exchange rate units (e.g., 1.0875 for EUR/USD).
     /// </summary>
     public decimal? SMA200 { get; init; }
 
@@ -439,21 +461,25 @@ public record RollingPeriodMetrics
 {
     /// <summary>
     /// Rolling mean price.
+    /// Expressed in exchange rate units (e.g., 1.0850 for EUR/USD).
     /// </summary>
     public decimal Mean { get; init; }
 
     /// <summary>
-    /// Rolling standard deviation.
+    /// Rolling standard deviation of prices.
+    /// Expressed in exchange rate units (e.g., 0.0125 for EUR/USD).
     /// </summary>
     public decimal StdDev { get; init; }
 
     /// <summary>
     /// Rolling return over the window.
+    /// Expressed as percentage (e.g., 3.50 means 3.50% return over the window).
     /// </summary>
     public decimal Return { get; init; }
 
     /// <summary>
-    /// Rolling volatility (annualized).
+    /// Rolling volatility (annualized from window's daily returns).
+    /// Expressed as percentage (e.g., 10.25 means 10.25% annualized volatility).
     /// </summary>
     public decimal Volatility { get; init; }
 }
@@ -463,7 +489,7 @@ public record RollingPeriodMetrics
 /// Response model for rolling average endpoint.
 /// Provides moving averages for currencies over specified window periods.
 /// </summary>
-public record RollingAverageResponse
+public record RollingMetricsResponse
 {
     /// <summary>
     /// Start date of the analysis period (YYYY-MM-DD).
@@ -546,4 +572,31 @@ public record RollingAverageData
     /// Variance of rates in the window.
     /// </summary>
     public decimal Variance { get; init; }
+}
+
+/// <summary>
+/// Response model for financial metrics endpoint.
+/// Returns comprehensive financial analytics for currencies.
+/// </summary>
+public record FinancialMetricsResponse
+{
+    /// <summary>
+    /// Start date of the analysis period (YYYY-MM-DD).
+    /// </summary>
+    public string StartDate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// End date of the analysis period (YYYY-MM-DD).
+    /// </summary>
+    public string EndDate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Base currency for all metrics.
+    /// </summary>
+    public string Base { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Dictionary of currency codes to their financial metrics.
+    /// </summary>
+    public Dictionary<string, CurrencyVolatilityMetrics> Metrics { get; init; } = new();
 }

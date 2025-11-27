@@ -1,5 +1,3 @@
-
-using Asp.Versioning;
 using CurrencyArchiveAPI.Extensions;
 using CurrencyArchiveAPI.Middleware;
 
@@ -13,7 +11,7 @@ namespace CurrencyArchiveAPI
 
             // Add services to the container
             builder.Services.AddCurrencyServices();
-            
+
             // Configure API versioning
             builder.Services.AddApiVersioning(options =>
             {

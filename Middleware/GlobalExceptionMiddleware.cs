@@ -49,7 +49,7 @@ public class GlobalExceptionMiddleware
                 argEx.Message,
                 "https://tools.ietf.org/html/rfc7231#section-6.5.1"
             ),
-            
+
             KeyNotFoundException notFoundEx => CreateProblemDetails(
                 context,
                 HttpStatusCode.NotFound,
@@ -57,7 +57,7 @@ public class GlobalExceptionMiddleware
                 notFoundEx.Message,
                 "https://tools.ietf.org/html/rfc7231#section-6.5.4"
             ),
-            
+
             InvalidOperationException invalidOpEx => CreateProblemDetails(
                 context,
                 HttpStatusCode.BadRequest,
@@ -65,20 +65,20 @@ public class GlobalExceptionMiddleware
                 invalidOpEx.Message,
                 "https://tools.ietf.org/html/rfc7231#section-6.5.1"
             ),
-            
+
             _ => CreateProblemDetails(
                 context,
                 HttpStatusCode.InternalServerError,
                 "Internal Server Error",
-                _environment.IsDevelopment() 
-                    ? exception.Message 
+                _environment.IsDevelopment()
+                    ? exception.Message
                     : "An unexpected error occurred. Please try again later.",
                 "https://tools.ietf.org/html/rfc7231#section-6.6.1"
             )
         };
 
         context.Response.StatusCode = problemDetails.Status;
-        
+
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
