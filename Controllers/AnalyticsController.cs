@@ -108,9 +108,9 @@ public class AnalyticsController : ControllerBase
             ));
         }
 
-        // Order currency dictionaries within each window by currency code
+        // Order currency dictionaries within each window by currenclecy code
         var orderedWindows = response.Windows
-            .Select(scm-history-item:%5Cworkspaces%5CCurrencyArchiveAPI?%7B%22repositoryId%22%3A%22scm0%22%2C%22historyItemId%22%3A%22574b88ad13b23db5d199c17a5030f1eaa503d1f5%22%2C%22historyItemParentId%22%3A%225c545789e7f8920c0776d770bfc280fd90309777%22%2C%22historyItemDisplayId%22%3A%22574b88a%22%7Dw => new RollingWindow
+            .Select(w => new RollingWindow
             {
                 WindowStart = w.WindowStart,
                 WindowEnd = w.WindowEnd,
