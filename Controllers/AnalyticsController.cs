@@ -2,6 +2,7 @@ using Asp.Versioning;
 using CurrencyArchiveAPI.Helpers;
 using CurrencyArchiveAPI.Models;
 using CurrencyArchiveAPI.Services;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CurrencyArchiveAPI.Controllers;
@@ -107,9 +108,29 @@ public class AnalyticsController : ControllerBase
             ));
         }
 
+        // Order currency dictionaries within each window by currency code
+        var orderedWindows = response.Windows
+            .Select(scm-history-item:%5Cworkspaces%5CCurrencyArchiveAPI?%7B%22repositoryId%22%3A%22scm0%22%2C%22historyItemId%22%3A%22574b88ad13b23db5d199c17a5030f1eaa503d1f5%22%2C%22historyItemParentId%22%3A%225c545789e7f8920c0776d770bfc280fd90309777%22%2C%22historyItemDisplayId%22%3A%22574b88a%22%7Dw => new RollingWindow
+            {
+                WindowStart = w.WindowStart,
+                WindowEnd = w.WindowEnd,
+                DataPoints = w.DataPoints,
+                Rates = w.Rates.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => kv.Value)
+            })
+            .ToList();
+
+        var orderedRollingResponse = new RollingMetricsResponse
+        {
+            StartDate = response.StartDate,
+            EndDate = response.EndDate,
+            Base = response.Base,
+            WindowSize = response.WindowSize,
+            Windows = orderedWindows
+        };
+
         return Ok(ApiResponse<RollingMetricsResponse>.SuccessResponse(
-            response,
-            $"Rolling average calculated: {response.Windows.Count} windows with {window_size}-day periods"
+            orderedRollingResponse,
+            $"Rolling average calculated: {orderedRollingResponse.Windows.Count} windows with {window_size}-day periods"
         ));
     }
 
@@ -194,18 +215,23 @@ public class AnalyticsController : ControllerBase
         // Calculate total data points from first currency (they should all have same count)
         var dataPoints = response.Metrics.Values.FirstOrDefault()?.DataPoints ?? 0;
 
+        // Order metrics by currency code for deterministic responses
+        var orderedMetrics = response.Metrics
+            .OrderBy(kv => kv.Key)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
         var compatibilityResponse = new FinancialAnalysisResponse
         {
             StartDate = start_date,
             EndDate = end_date,
             Base = baseCurrency,
             DataPoints = dataPoints,
-            Currencies = response.Metrics
+            Currencies = orderedMetrics
         };
 
         return Ok(ApiResponse<FinancialAnalysisResponse>.SuccessResponse(
             compatibilityResponse,
-            $"Financial metrics analysis completed: {response.Metrics.Count} currencies analyzed over {dataPoints} trading days"
+            $"Financial metrics analysis completed: {compatibilityResponse.Currencies.Count} currencies analyzed over {dataPoints} trading days"
         ));
     }
 }

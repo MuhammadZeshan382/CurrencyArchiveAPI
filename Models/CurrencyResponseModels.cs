@@ -78,9 +78,25 @@ public record AvailableCurrenciesResponse
     public int Count { get; init; }
 
     /// <summary>
-    /// List of currency codes.
+    /// List of currencies with code and friendly name.
     /// </summary>
-    public List<string> Currencies { get; init; } = new();
+    public List<CurrencyInfo> Currencies { get; init; } = new();
+}
+
+/// <summary>
+/// Lightweight currency information (code + name) used in responses.
+/// </summary>
+public record CurrencyInfo
+{
+    /// <summary>
+    /// ISO currency code (e.g., USD).
+    /// </summary>
+    public string Code { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Friendly currency name (e.g., United States Dollar).
+    /// </summary>
+    public string Name { get; init; } = string.Empty;
 }
 
 /// <summary>

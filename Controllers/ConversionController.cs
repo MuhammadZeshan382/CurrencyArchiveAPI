@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using CurrencyArchiveAPI.Helpers;
 using CurrencyArchiveAPI.Models;
+using CurrencyArchiveAPI.Constants;
 using CurrencyArchiveAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -138,9 +139,11 @@ public class ConversionController : ControllerBase
 
         _logger.LogInformation("Available currencies requested for date: {Date}", date);
 
-        var currencies = _converterService.GetAvailableCurrencies(parsedDate).ToList();
+            var codes = _converterService.GetAvailableCurrencies(parsedDate)
+                .OrderBy(c => c)
+                .ToList();
 
-        if (currencies.Count == 0)
+        if (codes.Count == 0)
         {
             return NotFound(ApiResponse<object>.FailureResponse(
                 "No currencies found",
@@ -148,16 +151,25 @@ public class ConversionController : ControllerBase
             ));
         }
 
+        // Enrich codes with friendly names using the CurrencySymbols dictionary
+        var currencyInfos = codes
+            .Select(code => new CurrencyInfo
+            {
+                Code = code,
+                Name = CurrencySymbols.Symbols.TryGetValue(code, out var name) ? name : string.Empty
+            })
+            .ToList();
+
         var response = new AvailableCurrenciesResponse
         {
             Date = date,
-            Count = currencies.Count,
-            Currencies = currencies
+            Count = currencyInfos.Count,
+            Currencies = currencyInfos
         };
 
         return Ok(ApiResponse<AvailableCurrenciesResponse>.SuccessResponse(
             response,
-            $"{currencies.Count} currencies available for {date}"
+            $"{response.Count} currencies available for {date}"
         ));
     }
 }

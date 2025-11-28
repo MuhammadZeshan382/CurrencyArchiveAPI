@@ -2,6 +2,7 @@ using Asp.Versioning;
 using CurrencyArchiveAPI.Helpers;
 using CurrencyArchiveAPI.Models;
 using CurrencyArchiveAPI.Services;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CurrencyArchiveAPI.Controllers;
@@ -63,8 +64,21 @@ public class HistoricalRatesController : ControllerBase
             ));
         }
 
+        // Order currency rates by code (ascending) for deterministic responses
+        var orderedRates = response.Rates
+            .OrderBy(kv => kv.Key)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        var orderedResponse = new HistoricalRatesResponse
+        {
+            Date = response.Date,
+            Base = response.Base,
+            Rates = orderedRates,
+            Timestamp = response.Timestamp
+        };
+
         return Ok(ApiResponse<HistoricalRatesResponse>.SuccessResponse(
-            response,
+            orderedResponse,
             $"Historical rates retrieved successfully for {date}"
         ));
     }
@@ -120,9 +134,24 @@ public class HistoricalRatesController : ControllerBase
             ));
         }
 
+        // Order inner currency dictionaries by currency code for each date
+        var orderedRatesByDate = response.Rates
+            .ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value.OrderBy(inner => inner.Key).ToDictionary(inner => inner.Key, inner => inner.Value)
+            );
+
+        var orderedTimeseries = new TimeseriesResponse
+        {
+            StartDate = response.StartDate,
+            EndDate = response.EndDate,
+            Base = response.Base,
+            Rates = orderedRatesByDate
+        };
+
         return Ok(ApiResponse<TimeseriesResponse>.SuccessResponse(
-            response,
-            $"Timeseries data retrieved: {response.Rates.Count} dates from {start_date} to {end_date}"
+            orderedTimeseries,
+            $"Timeseries data retrieved: {orderedTimeseries.Rates.Count} dates from {start_date} to {end_date}"
         ));
     }
 
@@ -190,9 +219,22 @@ public class HistoricalRatesController : ControllerBase
             ));
         }
 
+        // Order fluctuation rates by currency code for deterministic responses
+        var orderedFluctuationRates = response.Rates
+            .OrderBy(kv => kv.Key)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        var orderedFluctuation = new FluctuationResponse
+        {
+            StartDate = response.StartDate,
+            EndDate = response.EndDate,
+            Base = response.Base,
+            Rates = orderedFluctuationRates
+        };
+
         return Ok(ApiResponse<FluctuationResponse>.SuccessResponse(
-            response,
-            $"Fluctuation data retrieved: {response.Rates.Count} currencies from {start_date} to {end_date}"
+            orderedFluctuation,
+            $"Fluctuation data retrieved: {orderedFluctuation.Rates.Count} currencies from {start_date} to {end_date}"
         ));
     }
 }
