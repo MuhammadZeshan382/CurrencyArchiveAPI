@@ -1,7 +1,6 @@
 #See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
@@ -22,4 +21,9 @@ RUN dotnet publish "./CurrencyArchiveAPI.csproj" -c $BUILD_CONFIGURATION -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "CurrencyArchiveAPI.dll"]
+
+# Heroku dynamically assigns the PORT environment variable
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Use CMD with shell form to allow environment variable expansion
+CMD ASPNETCORE_URLS=http://+:$PORT dotnet CurrencyArchiveAPI.dll

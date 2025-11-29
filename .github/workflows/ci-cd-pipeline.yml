@@ -1,0 +1,317 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+      - main  # Supporting both master and main branches
+
+env:
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/currencyarchiveapi
+  HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+
+jobs:
+  version:
+    name: Calculate Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
+      build_number: ${{ steps.version.outputs.build_number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tags
+      
+      - name: Calculate version from tags
+        id: version
+        run: |
+          # Get the latest tag or default to 1.0.0
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+          
+          # Remove 'v' prefix if present
+          VERSION=${LATEST_TAG#v}
+          
+          # Get build number (total commits)
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          
+          # Create version tag
+          VERSION_TAG="${VERSION}.${BUILD_NUMBER}"
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          
+          echo "Version: ${VERSION}"
+          echo "Build Number: ${BUILD_NUMBER}"
+          echo "Full Version Tag: ${VERSION_TAG}"
+
+  update-version:
+    name: Update Project Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Verify Git configuration
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Update Directory.Build.props
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
+          
+          # Update VersionPrefix
+          sed -i "s|<VersionPrefix>.*</VersionPrefix>|<VersionPrefix>${VERSION}</VersionPrefix>|g" Directory.Build.props
+          
+          # Update AssemblyVersion
+          sed -i "s|<AssemblyVersion>.*</AssemblyVersion>|<AssemblyVersion>${VERSION}.${BUILD_NUMBER}</AssemblyVersion>|g" Directory.Build.props
+          
+          # Update FileVersion
+          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>${VERSION}.${BUILD_NUMBER}</FileVersion>|g" Directory.Build.props
+          
+          echo "Updated Directory.Build.props with version ${VERSION}.${BUILD_NUMBER}"
+          cat Directory.Build.props
+      
+      - name: Commit version changes
+        run: |
+          if git diff --quiet Directory.Build.props; then
+            echo "No version changes to commit"
+          else
+            git add Directory.Build.props
+            git commit -m "chore: bump version to ${{ needs.version.outputs.version_tag }} [skip ci]"
+            git push
+            echo "Version changes committed and pushed"
+          fi
+
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [version, update-version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      
+      - name: Pull latest changes
+        run: |
+          git pull origin ${{ github.ref_name }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.version.outputs.version_tag }}
+            type=raw,value=${{ needs.version.outputs.version }}
+            type=raw,value=latest
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+          build-args: |
+            BUILD_CONFIGURATION=Release
+      
+      - name: Image digest
+        run: |
+          echo "Docker image built and pushed successfully!"
+          echo "Image: ${{ env.DOCKER_IMAGE_NAME }}"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+
+  deploy-to-heroku:
+    name: Deploy to Heroku
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [version, build-and-push]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Log in to Heroku Container Registry
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
+      
+      - name: Pull Docker image from Docker Hub
+        run: |
+          docker pull ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.version.outputs.version_tag }}
+      
+      - name: Tag image for Heroku
+        run: |
+          docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.version.outputs.version_tag }} \
+            registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web
+      
+      - name: Push to Heroku Container Registry
+        run: |
+          docker push registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web
+      
+      - name: Release to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          # Install Heroku CLI
+          curl https://cli-assets.heroku.com/install.sh | sh
+          
+          # Release the app
+          heroku container:release web --app ${{ env.HEROKU_APP_NAME }}
+          
+          echo "Deployed to Heroku: https://${{ env.HEROKU_APP_NAME }}.herokuapp.com"
+      
+      - name: Verify deployment
+        run: |
+          sleep 10  # Wait for app to start
+          curl -f https://${{ env.HEROKU_APP_NAME }}.herokuapp.com/health || echo "⚠️ Health check failed"
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [version, deploy-to-heroku]
+    if: success()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION_TAG="v${{ needs.version.outputs.version_tag }}"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          
+          echo "Generating release notes from $PREVIOUS_TAG to HEAD"
+          
+          # Initialize changelog
+          CHANGELOG="## What's Changed"$'\n\n'
+          
+          # Get commits since last tag grouped by type
+          FEATURES=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^feat" || echo "")
+          FIXES=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^fix" || echo "")
+          PERF=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^perf" || echo "")
+          REFACTOR=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^refactor" || echo "")
+          DOCS=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^docs" || echo "")
+          CHORE=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^chore" --invert-grep --grep="skip ci" || echo "")
+          
+          # Build changelog sections
+          if [ -n "$FEATURES" ]; then
+            CHANGELOG="$CHANGELOG### Features"$'\n'"$FEATURES"$'\n\n'
+          fi
+          
+          if [ -n "$FIXES" ]; then
+            CHANGELOG="$CHANGELOG### Bug Fixes"$'\n'"$FIXES"$'\n\n'
+          fi
+          
+          if [ -n "$PERF" ]; then
+            CHANGELOG="$CHANGELOG### Performance Improvements"$'\n'"$PERF"$'\n\n'
+          fi
+          
+          if [ -n "$REFACTOR" ]; then
+            CHANGELOG="$CHANGELOG### Code Refactoring"$'\n'"$REFACTOR"$'\n\n'
+          fi
+          
+          if [ -n "$DOCS" ]; then
+            CHANGELOG="$CHANGELOG### Documentation"$'\n'"$DOCS"$'\n\n'
+          fi
+          
+          # If no categorized commits found, show all commits
+          if [ -z "$FEATURES" ] && [ -z "$FIXES" ] && [ -z "$PERF" ] && [ -z "$REFACTOR" ] && [ -z "$DOCS" ]; then
+            ALL_COMMITS=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges || echo "")
+            if [ -n "$ALL_COMMITS" ]; then
+              CHANGELOG="$CHANGELOG### All Changes"$'\n'"$ALL_COMMITS"$'\n\n'
+            else
+              CHANGELOG="$CHANGELOG- Initial release"$'\n\n'
+            fi
+          fi
+          
+          # Save to file for multiline output
+          echo "$CHANGELOG" > release_notes.md
+          
+          # Set output using proper delimiter
+          {
+            echo 'notes<<EOF'
+            cat release_notes.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
+      
+      - name: Create Git tag
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          TAG="v${{ needs.version.outputs.version_tag }}"
+          
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git tag -a "$TAG" -m "Release version ${{ needs.version.outputs.version_tag }}"
+            git push origin "$TAG"
+            echo "Created and pushed tag: $TAG"
+          fi
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.version.outputs.version_tag }}
+          name: Release v${{ needs.version.outputs.version_tag }}
+          body: |
+            ## Release v${{ needs.version.outputs.version_tag }}
+            
+            ${{ steps.release_notes.outputs.notes }}
+            
+            ---
+            
+            ### Deployment Information
+            - **Docker Image**: `${{ env.DOCKER_IMAGE_NAME }}:${{ needs.version.outputs.version_tag }}`
+            - **Heroku App**: https://${{ env.HEROKU_APP_NAME }}.herokuapp.com
+            - **Build Commit**: `${{ github.sha }}`
+            
+            ### Quick Start
+            ```bash
+            # Pull and run the Docker image
+            docker pull ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.version.outputs.version_tag }}
+            docker run -p 8080:8080 ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.version.outputs.version_tag }}
+            ```
+            
+            ### Links
+            - [Docker Hub](https://hub.docker.com/r/${{ env.DOCKER_IMAGE_NAME }})
+            - [API Documentation](https://${{ env.HEROKU_APP_NAME }}.herokuapp.com/swagger)
+            - [Health Check](https://${{ env.HEROKU_APP_NAME }}.herokuapp.com/health)
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

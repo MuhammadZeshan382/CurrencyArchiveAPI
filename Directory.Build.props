@@ -1,0 +1,50 @@
+<Project>
+
+  <!-- Version: Displayed in API responses and logs -->
+  <PropertyGroup>
+    <VersionPrefix>1.0.0</VersionPrefix>
+  </PropertyGroup>
+
+  <!-- Assembly Version: For .NET runtime compatibility (Major.Minor.Build.Revision) -->
+  <PropertyGroup>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- Project Information: Shown in assembly properties -->
+  <PropertyGroup>
+    <Product>CurrencyArchiveAPI</Product>
+    <Authors>Muhammad Zeshan</Authors>
+    <Company>Muhammad Zeshan</Company>
+    <Copyright>Copyright © 2025</Copyright>
+    <Description>High-performance currency conversion API with 20+ years of historical data</Description>
+  </PropertyGroup>
+
+  <!-- Language Settings: .NET 8, C# latest features, nullable reference types -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Documentation: Generate XML docs, suppress missing comment warnings -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Release Build: Enable optimizations for production -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!-- Performance: Server GC for high-throughput APIs, tiered compilation for faster startup -->
+  <PropertyGroup>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+  </PropertyGroup>
+
+</Project>
