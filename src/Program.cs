@@ -48,15 +48,13 @@ namespace CurrencyArchiveAPI
             var app = builder.Build();
 
             // Configure the HTTP request pipeline
-            if (app.Environment.IsDevelopment())
+            // Enable Swagger in all environments (development and production)
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Currency Archive API v1");
-                    options.RoutePrefix = "swagger";
-                });
-            }
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Currency Archive API v1");
+                options.RoutePrefix = string.Empty; // Set Swagger UI at root (/)
+            });
 
             // Global exception handling (must be first in pipeline)
             app.UseGlobalExceptionHandler();
