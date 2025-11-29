@@ -393,7 +393,7 @@ public record CurrencyVolatilityMetrics
     /// Sharpe ratio (risk-adjusted return metric).
     /// Formula: (annualized_return - risk_free_rate) / annualized_volatility
     /// Unitless ratio. Higher values indicate better risk-adjusted returns.
-    /// Typical values: >1.0 (excellent), 0.5-1.0 (good), 0-0.5 (acceptable), <0 (poor)
+    /// Typical values: greater than 1.0 (excellent), 0.5-1.0 (good), 0-0.5 (acceptable), less than 0 (poor)
     /// </summary>
     public decimal SharpeRatio { get; init; }
 

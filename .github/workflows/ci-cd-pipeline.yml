@@ -70,16 +70,38 @@ jobs:
           VERSION="${{ needs.version.outputs.version }}"
           BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
           
-          # Update VersionPrefix
-          sed -i "s|<VersionPrefix>.*</VersionPrefix>|<VersionPrefix>${VERSION}</VersionPrefix>|g" Directory.Build.props
+          echo "Raw VERSION from tag: ${VERSION}"
+          echo "Raw BUILD_NUMBER: ${BUILD_NUMBER}"
           
-          # Update AssemblyVersion
-          sed -i "s|<AssemblyVersion>.*</AssemblyVersion>|<AssemblyVersion>${VERSION}.${BUILD_NUMBER}</AssemblyVersion>|g" Directory.Build.props
+          # Extract only the first 3 parts of version (in case it was corrupted previously)
+          # This handles cases like "1.0.0.50" -> "1.0.0"
+          VERSION_CLEAN=$(echo "$VERSION" | cut -d. -f1-3)
           
-          # Update FileVersion
-          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>${VERSION}.${BUILD_NUMBER}</FileVersion>|g" Directory.Build.props
+          # Split version into parts (e.g., 1.0.0 -> 1, 0, 0)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_CLEAN"
           
-          echo "Updated Directory.Build.props with version ${VERSION}.${BUILD_NUMBER}"
+          # Ensure we have valid values
+          MAJOR=${MAJOR:-1}
+          MINOR=${MINOR:-0}
+          PATCH=${PATCH:-0}
+          
+          # Create 4-part version: Major.Minor.Patch.BuildNumber (max 65535 per part)
+          ASSEMBLY_VERSION="${MAJOR}.${MINOR}.${PATCH}.${BUILD_NUMBER}"
+          
+          echo "Cleaned VERSION: ${VERSION_CLEAN}"
+          echo "VersionPrefix: ${VERSION_CLEAN}"
+          echo "AssemblyVersion: ${ASSEMBLY_VERSION}"
+          
+          # Update VersionPrefix (keeps 3-part semantic version)
+          sed -i "s|<VersionPrefix>.*</VersionPrefix>|<VersionPrefix>${VERSION_CLEAN}</VersionPrefix>|g" Directory.Build.props
+          
+          # Update AssemblyVersion (4-part version with build number)
+          sed -i "s|<AssemblyVersion>.*</AssemblyVersion>|<AssemblyVersion>${ASSEMBLY_VERSION}</AssemblyVersion>|g" Directory.Build.props
+          
+          # Update FileVersion (4-part version with build number)
+          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>${ASSEMBLY_VERSION}</FileVersion>|g" Directory.Build.props
+          
+          echo "Updated Directory.Build.props:"
           cat Directory.Build.props
       
       - name: Commit version changes
@@ -130,7 +152,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./src
+          context: .
           file: ./src/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -154,6 +176,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Set Heroku stack to container
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          # Install Heroku CLI
+          curl https://cli-assets.heroku.com/install.sh | sh
+          
+          # Set stack to container
+          heroku stack:set container --app ${{ env.HEROKU_APP_NAME }} || echo "Stack already set to container"
       
       - name: Log in to Heroku Container Registry
         env:
