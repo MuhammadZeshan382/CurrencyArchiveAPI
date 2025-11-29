@@ -141,7 +141,7 @@ public class AnalyticsController : ControllerBase
     /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
     /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
     /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
+    /// <param name="symbols">Optional comma-separated list of currency codes to filter otherwise default is USD</param>
     /// <returns>Financial metrics response with comprehensive analytics for each currency</returns>
     [HttpGet("financial-metrics")]
     public IActionResult GetFinancialMetrics(
@@ -166,7 +166,7 @@ public class AnalyticsController : ControllerBase
         }
 
         var baseCurrency = ValidationHelper.NormalizeBaseCurrency(baseParam);
-        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>();
+        var symbolList = ValidationHelper.ParseSymbols(symbols)?.ToList() ?? new List<string>() { "USD" };
 
         _logger.LogInformation(
             "Financial metrics requested: Start={StartDate}, End={EndDate}, Base={Base}, Symbols={Symbols}",

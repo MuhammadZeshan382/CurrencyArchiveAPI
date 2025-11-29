@@ -1,3 +1,4 @@
+using CurrencyArchiveAPI.Constants;
 using CurrencyArchiveAPI.Helpers;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
@@ -19,11 +20,10 @@ public class CurrencyDataService : ICurrencyDataService
 
     public CurrencyDataService(
         ILogger<CurrencyDataService> logger,
-        IConfiguration configuration,
         DataLoaderHelper dataLoaderHelper)
     {
         _logger = logger;
-        _dataPath = configuration["CurrencyDataPath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "Data");
+        _dataPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", AppConstants.Currency.BaseCurrency);
         _dataLoaderHelper = dataLoaderHelper;
     }
 
