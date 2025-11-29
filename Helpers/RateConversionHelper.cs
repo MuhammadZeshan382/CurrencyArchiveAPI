@@ -78,7 +78,10 @@ public class RateConversionHelper : IRateConversionHelper
         var result = new Dictionary<string, decimal>();
         var currencyCodes = symbols?.Select(s => s.ToUpperInvariant()).ToHashSet();
 
-        if (currencyCodes == null || currencyCodes.Contains(baseCode))
+        // Treat null or empty as "all currencies"
+        var includeAll = currencyCodes == null || currencyCodes.Count == 0;
+
+        if (includeAll || (currencyCodes != null && currencyCodes.Contains(baseCode)))
         {
             result[baseCode] = 1.0m;
         }
@@ -86,7 +89,7 @@ public class RateConversionHelper : IRateConversionHelper
         foreach (var (currency, eurRate) in eurRates)
         {
             if (currency == baseCode) continue;
-            if (currencyCodes != null && !currencyCodes.Contains(currency)) continue;
+            if (!includeAll && currencyCodes != null && !currencyCodes.Contains(currency)) continue;
 
             var convertedRate = eurRate / baseRate;
             result[currency] = Math.Round(convertedRate, AppConstants.Precision.ExchangeRatePrecision);
