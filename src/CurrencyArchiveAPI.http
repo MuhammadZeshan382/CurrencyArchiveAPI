@@ -1,27 +1,26 @@
-@CurrencyArchiveAPI_HostAddress = https://localhost:7268
+@CurrencyArchiveAPI_HostAddress = http://localhost:5000
 
-### Health Check
+###############################
+# HEALTH & MONITORING
+###############################
+
+### Health Check - Service Status
 GET {{CurrencyArchiveAPI_HostAddress}}/api/health
 
 ###
 
-### Convert Currency - Basic (GBP to JPY, most recent date)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=GBP&to=JPY&amount=25
+
+###############################
+# CONVERSION CONTROLLER
+###############################
+
+### Convert Currency - Basic (Latest Date)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=100
 
 ###
 
-### Convert Currency - Historical (USD to EUR on specific date)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=100&date=2024-01-01
-
-###
-
-### Convert Currency - Same Currency
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=EUR&to=EUR&amount=50
-
-###
-
-### Convert Currency - Multiple Conversions (USD to GBP historical)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=GBP&amount=1000&date=2023-06-15
+### Convert Currency - Historical Date
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=GBP&to=JPY&amount=500&date=2024-01-15
 
 ###
 
@@ -30,184 +29,387 @@ GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=EUR&to=USD&amount=0.0
 
 ###
 
-### Get Dataset Info
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/info
+### Convert Currency - Large Amount
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=GBP&amount=1000000&date=2023-06-15
 
 ###
 
-### Get Single Exchange Rate (EUR -> USD)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rate/USD?date=2024-01-01
+### Convert Currency - Same Currency
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=EUR&to=EUR&amount=50
 
 ###
 
-### Get Available Currencies for Date
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/available?date=2024-01-01
+### Convert Currency - Cross Rate (Non-EUR pair)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=GBP&amount=250&date=2024-06-01
 
 ###
 
-### Get All Rates for Date (EUR base)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rates?date=2024-01-01
+### Convert Currency - Emerging Market
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=INR&amount=1000&date=2024-01-01
 
 ###
 
-### Historical Rates - Basic (EUR base, all currencies)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2013-12-24
+### Convert Currency - Crypto
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=BTC&amount=10000&date=2024-01-01
+
+###
+
+### Get Available Currencies - Specific Date
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currencies?date=2024-01-01
+
+###
+
+### Get Available Currencies - Recent Date
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currencies?date=2024-11-22
+
+###
+
+### Get Available Currencies - Historical
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currencies?date=2010-05-15
+
+###
+
+### VALIDATION TESTS - Invalid Currency Code
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=INVALID&to=USD&amount=100
+
+###
+
+### VALIDATION TESTS - Negative Amount
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=-100
+
+###
+
+### VALIDATION TESTS - Invalid Date Format
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=100&date=01-01-2024
+
+###
+
+### VALIDATION TESTS - Missing Required Parameter
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&amount=100
+
+###
+
+
+###############################
+# HISTORICAL RATES CONTROLLER
+###############################
+
+### Historical Rates - EUR Base (All Currencies)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-01-01
+
+###
+
+### Historical Rates - Custom Base (USD)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-01-01&base=USD
 
 ###
 
 ### Historical Rates - Custom Base (GBP)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2013-12-24?base=GBP
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2023-12-24&base=GBP
 
 ###
 
-### Historical Rates - Custom Base with Symbols
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2013-12-24?base=GBP&symbols=USD,CAD,EUR
+### Historical Rates - Symbol Filter (Major Currencies)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-01-01&symbols=USD,GBP,JPY,CHF
 
 ###
 
-### Historical Rates - Recent Date with USD base
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2024-01-01?base=USD&symbols=EUR,GBP,JPY,CAD
+### Historical Rates - Custom Base + Symbols
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-01-01&base=USD&symbols=EUR,GBP,JPY,CAD,AUD
 
 ###
 
-### Historical Rates - Symbol Filter Only
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/2024-11-22?symbols=USD,GBP,CHF
+### Historical Rates - Single Symbol
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-06-15&symbols=USD
 
 ###
 
-### Timeseries - Basic (EUR base, 25 days)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2012-05-01&end_date=2012-05-25
+### Historical Rates - Emerging Markets
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-01-01&symbols=INR,BRL,MXN,ZAR,TRY
 
 ###
 
-### Timeseries - Custom Base (EUR)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2012-05-01&end_date=2012-05-25&base=EUR
+### Historical Rates - Old Date (1999)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=1999-01-04
 
 ###
 
-### Timeseries - Custom Base with Symbols (EUR -> USD, AUD, CAD)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2012-05-01&end_date=2012-05-25&base=EUR&symbols=USD,AUD,CAD
+### Timeseries - Basic (1 Month, EUR Base)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31
 
 ###
 
-### Timeseries - GBP base with selected currencies
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31&base=GBP&symbols=USD,EUR,JPY
+### Timeseries - Custom Base (USD)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31&base=USD
 
 ###
 
-### Timeseries - Short range (1 week)
+### Timeseries - With Symbol Filter
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31&base=EUR&symbols=USD,GBP,JPY
+
+###
+
+### Timeseries - Short Range (1 Week)
 GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-11-15&end_date=2024-11-22
 
 ###
 
-### Fluctuation - Basic (EUR base, 2 days)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2018-02-25&end_date=2018-02-26
+### Timeseries - Quarterly Data
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-03-31&symbols=USD,EUR,GBP
 
 ###
 
-### Fluctuation - With Symbols (EUR -> USD, JPY)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2018-02-25&end_date=2018-02-26&symbols=USD,JPY
+### Timeseries - Year-Long Data
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2023-01-01&end_date=2023-12-31&base=USD&symbols=EUR,GBP
 
 ###
 
-### Fluctuation - Custom Base (GBP -> USD, EUR, CAD)
+### Timeseries - Historical Range (2010-2011)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2010-01-01&end_date=2010-12-31&symbols=USD,GBP
+
+###
+
+### Timeseries - Multi-Currency
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-06-01&end_date=2024-06-30&base=GBP&symbols=USD,EUR,JPY,CHF,CAD,AUD
+
+###
+
+### Fluctuation - Basic (2 Days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-02
+
+###
+
+### Fluctuation - Weekly Analysis
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-07&symbols=USD,GBP,JPY
+
+###
+
+### Fluctuation - Monthly Analysis
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-31&base=USD
+
+###
+
+### Fluctuation - Custom Base + Symbols
 GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-31&base=GBP&symbols=USD,EUR,CAD
 
 ###
 
-### Fluctuation - One Month Range
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-10-01&end_date=2024-10-31&base=USD
+### Fluctuation - Quarterly Range
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-10-01&end_date=2024-12-31&base=EUR&symbols=USD,GBP,JPY,CHF
 
 ###
 
-### Fluctuation - Recent Week
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-11-15&end_date=2024-11-22
+### Fluctuation - Year-over-Year
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2023-01-01&end_date=2024-01-01&symbols=USD,EUR
 
 ###
 
-### Test Invalid Date Format (should return 400)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/24-12-2013
+### Fluctuation - Emerging Markets Volatility
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/fluctuation?start_date=2024-06-01&end_date=2024-12-31&base=USD&symbols=INR,BRL,MXN,TRY
 
 ###
 
-### Test Currency Not Found (should return 404)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/currency/rate/XYZ?date=2024-01-01
+### VALIDATION TESTS - Invalid Date Format (Historical)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=24-12-2013
 
 ###
 
-### Rolling Average - Basic (3-day window, EUR base)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2025-01-01&end_date=2025-01-30&window_size=3
+### VALIDATION TESTS - Future Date
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2030-01-01
 
 ###
 
-### Rolling Average - With Symbols (7-day window, USD base, PKR currency)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-01-01&end_date=2024-01-31&window_size=7&base=USD&symbols=PKR
+### VALIDATION TESTS - Start Date After End Date
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-12-31&end_date=2024-01-01
 
 ###
 
-### Rolling Average - Multiple Currencies (5-day window)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-10-01&end_date=2024-10-31&window_size=5&base=EUR&symbols=USD,GBP,JPY
+### VALIDATION TESTS - Invalid Currency Symbol
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=2024-01-01&symbols=XYZ,ABC
 
 ###
 
-### Rolling Average - Custom Base (14-day window, GBP base)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-06-01&end_date=2024-06-30&window_size=14&base=GBP
+
+###############################
+# ANALYTICS CONTROLLER
+###############################
+
+### Rolling Metrics - Basic (7-day window)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-01-31&window_size=7
 
 ###
 
-### Rolling Average - Short Window (1-day, shows daily rates with stats)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-average?start_date=2024-11-01&end_date=2024-11-10&window_size=1&symbols=USD,EUR
+### Rolling Metrics - Custom Base + Symbols
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-01-31&window_size=7&base=USD&symbols=EUR,GBP
 
 ###
 
-### Test Date Not Found (should return 404)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/1990-01-01
+### Rolling Metrics - Small Window (3-day)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-11-01&end_date=2024-11-30&window_size=3&symbols=USD,EUR,GBP
 
 ###
 
-###
-
-### Financial Metrics - Basic (30 days, EUR base, all currencies)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-01-01&end_date=2024-01-31
+### Rolling Metrics - Large Window (14-day)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-06-01&end_date=2024-06-30&window_size=14&base=GBP&symbols=USD,EUR
 
 ###
 
-### Financial Metrics - Year-Long Analysis (2024 full year, major currencies)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,GBP,JPY,CHF,CAD,AUD
+### Rolling Metrics - Single Currency
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-01-31&window_size=5&symbols=USD
 
 ###
 
-### Financial Metrics - Custom Base (USD base, emerging markets)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-06-01&end_date=2024-12-31&base=USD&symbols=INR,BRL,MXN,ZAR,TRY
+### Rolling Metrics - Quarterly Analysis
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-03-31&window_size=10&base=EUR&symbols=USD,GBP,JPY
 
 ###
 
-### Financial Metrics - Quarterly Analysis (Q3 2024)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-07-01&end_date=2024-09-30&symbols=EUR,USD,GBP
+### Rolling Metrics - 30-day Moving Average
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-12-31&window_size=30&symbols=USD,EUR
 
 ###
 
-### Financial Metrics - Short Period (7 days, high frequency)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-11-01&end_date=2024-11-07&base=EUR&symbols=USD,JPY
+### Financial Metrics - Basic (30 days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-01-31&symbols=USD
 
 ###
 
-### Financial Metrics - Multi-Year (2022-2024, crypto and fiat)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2022-01-01&end_date=2024-12-31&symbols=USD,BTC,ETH
+### Financial Metrics - Quarterly Analysis
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-03-31&symbols=USD,GBP,JPY
 
 ###
 
-### Financial Metrics - Professional Analysis (90 days, Sharpe, VaR, Correlations, Rolling)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-09-01&end_date=2024-11-30&symbols=USD,GBP,JPY,EUR
+### Financial Metrics - Year-Long Analysis
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,EUR,GBP,JPY,CHF,CAD
 
 ###
 
-### Financial Metrics - Rolling Windows Test (180+ days for all rolling windows)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-05-01&end_date=2024-11-30&base=USD&symbols=GBP,CHF
+### Financial Metrics - Custom Base (USD)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-12-31&base=USD&symbols=EUR,GBP,JPY
 
 ###
 
-### Financial Metrics - Momentum & SMA Test (252+ days for 12M momentum and SMA200)
-GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,EUR,GBP,JPY,CAD
+### Financial Metrics - Emerging Markets
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-06-01&end_date=2024-12-31&base=USD&symbols=INR,BRL,MXN,ZAR,TRY
+
+###
+
+### Financial Metrics - Short Period (7 days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-11-01&end_date=2024-11-07&symbols=USD,EUR
+
+###
+
+### Financial Metrics - Multi-Currency Comparison
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-06-30&base=EUR&symbols=USD,GBP,JPY,CHF,CAD,AUD,NZD
+
+###
+
+### Financial Metrics - Crypto vs Fiat
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,BTC,ETH
+
+###
+
+### Financial Metrics - Long-term Analysis (Multi-year)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2022-01-01&end_date=2024-12-31&symbols=USD,EUR,GBP
+
+###
+
+### Financial Metrics - Sharpe & VaR Analysis (90+ days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-09-01&end_date=2024-11-30&symbols=USD,GBP,JPY
+
+###
+
+### Financial Metrics - Rolling Windows Test (180+ days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-05-01&end_date=2024-11-30&base=USD&symbols=GBP,CHF
+
+###
+
+### Financial Metrics - Momentum & SMA Test (252+ days)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-12-31&symbols=USD,EUR,GBP,JPY
+
+###
+
+### VALIDATION TESTS - Window Size Too Large
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-01-10&window_size=20
+
+###
+
+### VALIDATION TESTS - Window Size Zero
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-01-31&window_size=0
+
+###
+
+### VALIDATION TESTS - Insufficient Data for Metrics
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/financial-metrics?start_date=2024-11-28&end_date=2024-11-29&symbols=USD
+
+###
+
+
+###############################
+# ERROR SCENARIOS
+###############################
+
+### ERROR - 404 Date Not Found (Pre-1999)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/historical?date=1990-01-01
+
+###
+
+### ERROR - 404 Currency Not Found
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=XYZ&to=USD&amount=100
+
+###
+
+### ERROR - 400 Missing Required Parameter
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&amount=100
+
+###
+
+### ERROR - 400 Invalid Amount (Negative)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=-100
+
+###
+
+### ERROR - 400 Invalid Date Range
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-12-31&end_date=2024-01-01
+
+###
+
+### ERROR - 404 No Data in Range
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=1990-01-01&end_date=1990-12-31
+
+###
+
+
+###############################
+# EDGE CASES
+###############################
+
+### EDGE CASE - Zero Amount
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=0
+
+###
+
+### EDGE CASE - Very Large Amount
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=USD&to=EUR&amount=999999999999
+
+###
+
+### EDGE CASE - Single Day Range
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-01
+
+###
+
+### EDGE CASE - Window Size = 1
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-01-10&window_size=1&symbols=USD
+
+###
+
+### EDGE CASE - Case Sensitivity Test (lowercase)
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from=usd&to=eur&amount=100
+
+###
+
+### EDGE CASE - Whitespace in Currency Code
+GET {{CurrencyArchiveAPI_HostAddress}}/api/v1/convert?from= USD &to= EUR &amount=100
 
 ###

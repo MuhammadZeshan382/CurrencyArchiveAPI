@@ -29,8 +29,8 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Heroku dynamically assigns the PORT environment variable
+# Azure App Service uses port 8080 by default for Linux containers
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
 
-# Use CMD with shell form to allow environment variable expansion
-CMD ASPNETCORE_URLS=http://+:$PORT dotnet CurrencyArchiveAPI.dll
+ENTRYPOINT ["dotnet", "CurrencyArchiveAPI.dll"]

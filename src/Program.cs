@@ -59,6 +59,9 @@ namespace CurrencyArchiveAPI
                 options.RoutePrefix = string.Empty; // Set Swagger UI at root (/)
             });
 
+            // Redirect /swagger to root for convenience
+            app.MapGet("/swagger", () => Results.Redirect("/")).ExcludeFromDescription();
+
             // Global exception handling (must be first in pipeline)
             app.UseGlobalExceptionHandler();
 
