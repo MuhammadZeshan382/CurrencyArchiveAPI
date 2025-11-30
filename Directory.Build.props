@@ -7,8 +7,8 @@
 
   <!-- Assembly Version: For .NET runtime compatibility (Major.Minor.Build.Revision) -->
   <PropertyGroup>
-    <AssemblyVersion>1.0.0.51</AssemblyVersion>
-    <FileVersion>1.0.0.51</FileVersion>
+    <AssemblyVersion>1.0.0.53</AssemblyVersion>
+    <FileVersion>1.0.0.53</FileVersion>
   </PropertyGroup>
 
   <!-- Project Information: Shown in assembly properties -->
