@@ -26,17 +26,12 @@ public class AnalyticsController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Calculates rolling averages (Simple Moving Average) for currencies over a date range.
-    /// Uses sliding window technique to compute statistical measures including mean, min, max, standard deviation, and variance.
-    /// </summary>
-    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
-    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
-    /// <param name="window_size">Window size in days for rolling average calculation (required, minimum 1)</param>
-    /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter otherwise default is USD</param>
-    /// <returns>Rolling average response with statistical measures for each window</returns>
+    /// <summary>Calculate rolling window statistics</summary>
     [HttpGet("rolling-metrics")]
+    [ProducesResponseType(typeof(ApiResponse<RollingMetricsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult GetRollingMetrics(
         [FromQuery] string start_date,
         [FromQuery] string end_date,
@@ -134,16 +129,12 @@ public class AnalyticsController : ControllerBase
         ));
     }
 
-    /// <summary>
-    /// Analyzes comprehensive financial metrics and risk indicators for currencies over a date range.
-    /// Provides returns, volatility, drawdown, Sharpe ratio, VaR, momentum, SMA, Z-score, correlations, and rolling statistics.
-    /// </summary>
-    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
-    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
-    /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter otherwise default is USD</param>
-    /// <returns>Financial metrics response with comprehensive analytics for each currency</returns>
+    /// <summary>Perform comprehensive financial analysis</summary>
     [HttpGet("financial-metrics")]
+    [ProducesResponseType(typeof(ApiResponse<FinancialAnalysisResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult GetFinancialMetrics(
         [FromQuery] string start_date,
         [FromQuery] string end_date,

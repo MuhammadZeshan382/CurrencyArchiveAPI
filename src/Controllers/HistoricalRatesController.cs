@@ -26,14 +26,12 @@ public class HistoricalRatesController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Gets historical exchange rates for a specific date with custom base currency.
-    /// </summary>
-    /// <param name="date">Date in YYYY-MM-DD format</param>
-    /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
-    /// <returns>Historical rates response with all requested currency rates</returns>
+    /// <summary>Get historical rates for a specific date</summary>
     [HttpGet("historical")]
+    [ProducesResponseType(typeof(ApiResponse<HistoricalRatesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult GetHistoricalRates(
         [FromQuery] string date,
         [FromQuery(Name = "base")] string? baseParam = null,
@@ -83,15 +81,12 @@ public class HistoricalRatesController : ControllerBase
         ));
     }
 
-    /// <summary>
-    /// Gets daily historical exchange rates between two dates.
-    /// </summary>
-    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
-    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
-    /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
-    /// <returns>Timeseries response with daily rates for the date range</returns>
+    /// <summary>Get timeseries data for a date range</summary>
     [HttpGet("timeseries")]
+    [ProducesResponseType(typeof(ApiResponse<TimeseriesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult GetTimeseries(
         [FromQuery] string start_date,
         [FromQuery] string end_date,
@@ -155,16 +150,12 @@ public class HistoricalRatesController : ControllerBase
         ));
     }
 
-    /// <summary>
-    /// Gets currency fluctuation data between two dates.
-    /// Shows start rate, end rate, absolute change, and percentage change.
-    /// </summary>
-    /// <param name="start_date">Start date in YYYY-MM-DD format (required)</param>
-    /// <param name="end_date">End date in YYYY-MM-DD format (required)</param>
-    /// <param name="baseParam">Optional base currency (default: EUR)</param>
-    /// <param name="symbols">Optional comma-separated list of currency codes to filter</param>
-    /// <returns>Fluctuation response with change data for each currency</returns>
+    /// <summary>Analyze currency fluctuations between dates</summary>
     [HttpGet("fluctuation")]
+    [ProducesResponseType(typeof(ApiResponse<FluctuationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult GetFluctuation(
         [FromQuery] string start_date,
         [FromQuery] string end_date,

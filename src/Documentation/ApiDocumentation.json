@@ -1,0 +1,117 @@
+{
+  "ConversionController": {
+    "ConvertCurrency": {
+      "summary": "Converts an amount from one currency to another using historical exchange rates.",
+      "description": "This endpoint performs currency conversion using historical exchange rate data. All rates are calculated using EUR as the base currency.\n\nSample request:\n\n    GET /api/v1/convert?from=USD&to=GBP&amount=100&date=2024-01-15",
+      "parameters": {
+        "from": "Source currency code (ISO 4217 format, 3 uppercase letters). Example: USD, EUR, GBP. Must exist in the dataset for the specified date.",
+        "to": "Target currency code (ISO 4217 format, 3 uppercase letters). Example: JPY, CAD, AUD. Must exist in the dataset for the specified date.",
+        "amount": "Amount to convert (must be greater than 0). Supports up to 6 decimal places. Example: 100, 1250.50, 0.01",
+        "date": "Optional date in YYYY-MM-DD format (e.g., 2024-01-15). If omitted, uses the most recent available data. Date must be between 1999-01-04 and the latest available date."
+      },
+      "responses": {
+        "200": "Successfully converted the amount with detailed conversion information.",
+        "400": "Invalid input parameters (invalid currency codes, negative amount, malformed date, etc.).",
+        "404": "Currency pair not found for the specified date, or no data available for the requested date.",
+        "500": "Internal server error occurred during conversion."
+      }
+    },
+    "GetAvailableCurrencies": {
+      "summary": "Retrieves all available currency codes and their names for a specific date.",
+      "description": "This endpoint returns a list of all currencies available in the dataset for the specified date, including both the ISO 4217 currency code and the full currency name. The dataset includes 170+ currencies including major fiat currencies and some cryptocurrencies.\n\nSample request:\n\n    GET /api/v1/currencies?date=2024-01-15",
+      "parameters": {
+        "date": "Date in YYYY-MM-DD format (e.g., 2024-01-15). Must be between 1999-01-04 and the latest available date in the dataset. Required parameter."
+      },
+      "responses": {
+        "200": "Successfully retrieved the list of available currencies for the specified date.",
+        "400": "Invalid date format or date parameter missing. Must be in YYYY-MM-DD format.",
+        "404": "No currency data available for the specified date (date may be outside the dataset range or on a non-trading day).",
+        "500": "Internal server error occurred while retrieving currencies."
+      }
+    }
+  },
+  "HistoricalRatesController": {
+    "GetHistoricalRates": {
+      "summary": "Retrieves historical exchange rates for a specific date with optional base currency conversion.",
+      "description": "This endpoint returns exchange rates for all currencies (or a filtered subset) on a specific historical date. By default, all rates are returned with EUR as the base currency. You can specify a different base currency to get rates relative to that currency instead.\n\nSample requests:\n\n    GET /api/v1/historical?date=2024-01-15\n    GET /api/v1/historical?date=2024-01-15&base=USD\n    GET /api/v1/historical?date=2024-01-15&base=USD&symbols=GBP,JPY,CAD",
+      "parameters": {
+        "date": "Date in YYYY-MM-DD format (e.g., 2024-01-15). Must be between 1999-01-04 and the latest available date. Required parameter.",
+        "base": "Base currency code (ISO 4217 format, 3 uppercase letters). Default: EUR. Example: USD, GBP, JPY. All returned rates will be relative to this currency.",
+        "symbols": "Comma-separated list of target currency codes to filter results (e.g., \"USD,GBP,JPY\"). If omitted, returns all available currencies. Each code must be 3 uppercase letters."
+      },
+      "responses": {
+        "200": "Successfully retrieved historical rates. Returns rates sorted alphabetically by currency code.",
+        "400": "Invalid parameters (malformed date, invalid currency codes, etc.).",
+        "404": "No exchange rate data available for the specified date or currency combination.",
+        "500": "Internal server error occurred during data retrieval."
+      }
+    },
+    "GetTimeseries": {
+      "summary": "Retrieves daily historical exchange rates for a date range (timeseries data).",
+      "description": "This endpoint returns exchange rates for each day within the specified date range. Useful for charting, trend analysis, and historical data visualization. By default, returns all available currencies with EUR as base, but can be filtered and rebased.\n\nSample requests:\n\n    GET /api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31\n    GET /api/v1/timeseries?start_date=2024-01-01&end_date=2024-01-31&base=USD&symbols=GBP,JPY",
+      "parameters": {
+        "start_date": "Start date in YYYY-MM-DD format (e.g., 2024-01-01). Must be between 1999-01-04 and the latest available date. Required parameter.",
+        "end_date": "End date in YYYY-MM-DD format (e.g., 2024-01-31). Must be on or after start_date and within the dataset range. Required parameter.",
+        "base": "Base currency code (ISO 4217 format, 3 uppercase letters). Default: EUR. Example: USD, GBP, CAD. All rates will be relative to this currency.",
+        "symbols": "Comma-separated list of target currency codes to include (e.g., \"USD,GBP,JPY\"). If omitted, returns all available currencies. White space is ignored."
+      },
+      "responses": {
+        "200": "Successfully retrieved timeseries data. Returns a dictionary of dates with their respective currency rates.",
+        "400": "Invalid parameters (malformed dates, end_date before start_date, invalid currency codes, etc.).",
+        "404": "No exchange rate data available for the specified date range or currency combination.",
+        "500": "Internal server error occurred during timeseries retrieval."
+      }
+    },
+    "GetFluctuation": {
+      "summary": "Analyzes currency fluctuations between two dates with detailed change metrics.",
+      "description": "This endpoint calculates the change in exchange rates between two dates, providing:\n- Starting rate\n- Ending rate\n- Absolute change (difference)\n- Percentage change\n\nUseful for volatility analysis, currency trend tracking, and comparative performance.\n\nSample requests:\n\n    GET /api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-31\n    GET /api/v1/fluctuation?start_date=2024-01-01&end_date=2024-01-31&base=USD&symbols=EUR,GBP",
+      "parameters": {
+        "start_date": "Start date in YYYY-MM-DD format (e.g., 2024-01-01). Must be between 1999-01-04 and the latest available date. Required parameter.",
+        "end_date": "End date in YYYY-MM-DD format (e.g., 2024-01-31). Must be on or after start_date. Required parameter.",
+        "base": "Base currency code (ISO 4217 format, 3 uppercase letters). Default: EUR. Example: USD, GBP, JPY. Fluctuations are calculated relative to this currency.",
+        "symbols": "Comma-separated list of target currency codes to analyze (e.g., \"USD,GBP,JPY\"). If omitted, analyzes all available currencies that exist on both dates."
+      },
+      "responses": {
+        "200": "Successfully calculated fluctuation data. Returns comprehensive change metrics for each currency.",
+        "400": "Invalid parameters (malformed dates, end_date before start_date, invalid currency codes, etc.).",
+        "404": "No common currency data available for both dates, or specified currencies not found.",
+        "500": "Internal server error occurred during fluctuation calculation."
+      }
+    }
+  },
+  "AnalyticsController": {
+    "GetRollingMetrics": {
+      "summary": "Calculates rolling window statistics (Simple Moving Average and related metrics) for currency rates over a date range.",
+      "description": "This endpoint performs rolling window analysis using a sliding window technique. For each window position, it calculates:\n- Mean (Simple Moving Average)\n- Minimum rate\n- Maximum rate\n- Standard deviation\n- Variance\n\nUseful for technical analysis, trend identification, and smoothing out short-term fluctuations.\n\nSample requests:\n\n    GET /api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-03-31&window_size=7\n    GET /api/v1/rolling-metrics?start_date=2024-01-01&end_date=2024-03-31&window_size=30&base=USD&symbols=EUR,GBP",
+      "parameters": {
+        "start_date": "Start date in YYYY-MM-DD format (e.g., 2024-01-01). Must be between 1999-01-04 and the latest available date. Required parameter.",
+        "end_date": "End date in YYYY-MM-DD format (e.g., 2024-03-31). Must be on or after start_date. Required parameter.",
+        "window_size": "Window size in days for rolling calculation (e.g., 7, 30, 90). Must be ≥ 1 and ≤ total days in date range. Common values: 7 (weekly), 30 (monthly), 90 (quarterly). Required parameter.",
+        "base": "Base currency code (ISO 4217 format, 3 uppercase letters). Default: EUR. Example: USD, GBP, CAD. Rates will be relative to this currency.",
+        "symbols": "Comma-separated list of target currency codes to analyze (e.g., \"EUR,GBP,JPY\"). Default: USD if omitted. Each code must be 3 uppercase letters."
+      },
+      "responses": {
+        "200": "Successfully calculated rolling metrics. Returns statistical measures for each sliding window, with currencies sorted alphabetically.",
+        "400": "Invalid parameters (malformed dates, window_size exceeds date range, negative window_size, invalid currency codes, etc.).",
+        "404": "Insufficient data available for the requested date range or currency combination to perform rolling calculation.",
+        "500": "Internal server error occurred during rolling metrics calculation."
+      }
+    },
+    "GetFinancialMetrics": {
+      "summary": "Performs comprehensive financial analysis with advanced risk and performance metrics for currencies.",
+      "description": "This endpoint provides institutional-grade financial analytics including:\n\n**Return Metrics:**\n- Total return (cumulative)\n- Annualized return\n- Daily returns statistics\n\n**Risk Metrics:**\n- Volatility (standard deviation of returns)\n- Annualized volatility\n- Value at Risk (VaR) at 95% confidence\n- Maximum drawdown\n- Sharpe ratio (risk-adjusted return)\n\n**Technical Indicators:**\n- 20-day Simple Moving Average (SMA)\n- 50-day Simple Moving Average\n- Momentum (rate of change)\n- Z-score (standardized deviation from mean)\n\n**Statistical Measures:**\n- Rolling windows (7, 30, 90 days)\n- Correlation matrix between currencies\n\nIdeal for portfolio management, risk assessment, and quantitative analysis.\n\nSample requests:\n\n    GET /api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-12-31\n    GET /api/v1/financial-metrics?start_date=2024-01-01&end_date=2024-12-31&base=USD&symbols=EUR,GBP,JPY",
+      "parameters": {
+        "start_date": "Start date in YYYY-MM-DD format (e.g., 2024-01-01). Must be between 1999-01-04 and the latest available date. Requires sufficient history for rolling calculations. Required parameter.",
+        "end_date": "End date in YYYY-MM-DD format (e.g., 2024-12-31). Must be on or after start_date. Recommended minimum: 90 days for meaningful statistics. Required parameter.",
+        "base": "Base currency code (ISO 4217 format, 3 uppercase letters). Default: EUR. Example: USD, GBP, CHF. All metrics are calculated relative to this currency.",
+        "symbols": "Comma-separated list of target currency codes to analyze (e.g., \"EUR,GBP,JPY,CAD\"). Default: USD if omitted. Minimum 2 currencies recommended for correlation analysis."
+      },
+      "responses": {
+        "200": "Successfully calculated financial metrics. Returns complete analytical data for each currency including all risk and performance indicators.",
+        "400": "Invalid parameters (malformed dates, end_date before start_date, invalid currency codes, etc.).",
+        "404": "Insufficient data available for financial analysis (date range too short, currencies not found, missing data points).",
+        "500": "Internal server error occurred during financial metrics calculation."
+      }
+    }
+  }
+}

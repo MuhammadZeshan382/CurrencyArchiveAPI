@@ -29,15 +29,12 @@ public class ConversionController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Converts an amount from one currency to another using exchange rates.
-    /// </summary>
-    /// <param name="from">Source currency code (e.g., GBP)</param>
-    /// <param name="to">Target currency code (e.g., JPY)</param>
-    /// <param name="amount">Amount to convert</param>
-    /// <param name="date">Optional date in YYYY-MM-DD format. If not specified, uses most recent available data.</param>
-    /// <returns>Conversion result with converted amount and exchange rate</returns>
+    /// <summary>Currency conversion endpoint</summary>
     [HttpGet("convert")]
+    [ProducesResponseType(typeof(ApiResponse<ConvertResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult ConvertCurrency(
         [FromQuery] string from,
         [FromQuery] string to,
@@ -124,12 +121,12 @@ public class ConversionController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Gets all available currency codes for a specific date.
-    /// </summary>
-    /// <param name="date">Date in YYYY-MM-DD format (e.g., 2024-01-01)</param>
-    /// <returns>List of all currency codes available on the specified date</returns>
+    /// <summary>Get available currencies for a date</summary>
     [HttpGet("currencies")]
+    [ProducesResponseType(typeof(ApiResponse<AvailableCurrenciesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetailsResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult GetAvailableCurrencies([FromQuery] string date)
     {
         if (!ValidationHelper.TryValidateDate(date, "date", out var parsedDate, out var error))

@@ -36,6 +36,9 @@ namespace CurrencyArchiveAPI
                                   "Supports flexible base currency conversion and symbol filtering."
                 });
 
+                // Apply external API documentation from JSON file
+                options.OperationFilter<CurrencyArchiveAPI.Documentation.ApiDocumentationFilter>();
+
                 // Include XML comments for Swagger documentation
                 var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
