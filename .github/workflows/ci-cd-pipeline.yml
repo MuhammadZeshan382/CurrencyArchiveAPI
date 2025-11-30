@@ -32,12 +32,15 @@ jobs:
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
           
           # Remove 'v' prefix if present
-          VERSION=${LATEST_TAG#v}
+          VERSION_RAW=${LATEST_TAG#v}
+          
+          # Extract only the first 3 parts (Major.Minor.Patch) to handle corrupted tags
+          VERSION=$(echo "$VERSION_RAW" | cut -d. -f1-3)
           
           # Get build number (total commits)
           BUILD_NUMBER=$(git rev-list --count HEAD)
           
-          # Create version tag
+          # Create version tag: Major.Minor.Patch.BuildNumber
           VERSION_TAG="${VERSION}.${BUILD_NUMBER}"
           
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
