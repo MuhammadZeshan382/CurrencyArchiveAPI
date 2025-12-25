@@ -288,8 +288,8 @@ jobs:
             ```
             
             ### Links
+            - [Live API](https://currencyapi.vitalmedx.com/)
             - [Docker Hub](https://hub.docker.com/r/mzeshawn/currencyarchiveapi)
-            - [Documentation](https://github.com/${{ github.repository }})
           draft: false
           prerelease: false
         env:
