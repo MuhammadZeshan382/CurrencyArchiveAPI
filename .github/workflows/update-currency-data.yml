@@ -24,15 +24,19 @@ jobs:
           token: ${{ github.token }}
       
       - name: Fetch and save currency data
+        id: fetch
         env:
           API_KEY: ${{ secrets.CURRENCY_KEY }}
           API_URL: ${{ secrets.CURRENCY_URL }}
         run: |
+          set -e
+          
           # Configuration
           BASE_CURRENCY="EUR"
           
           # Get current date in UTC
           CURRENT_DATE=$(date -u +"%Y-%m-%d")
+          echo "date=${CURRENT_DATE}" >> $GITHUB_OUTPUT
           YEAR=$(date -u +"%Y")
           MONTH=$(date -u +"%B")
           FILENAME=$(date -u +"%d-%m-%Y.json")
@@ -46,14 +50,13 @@ jobs:
           # Check if file already exists
           if [ -f "${FILE_PATH}" ]; then
             echo "Data for ${CURRENT_DATE} already exists"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
-          # Create directory structure if it doesn't exist
-          if [ ! -d "${DATA_DIR}" ]; then
-            echo "Creating directory: ${DATA_DIR}"
-            mkdir -p "${DATA_DIR}"
-          fi
+          # Create directory structure
+          mkdir -p "${DATA_DIR}"
+          echo "Created directory: ${DATA_DIR}"
           
           # Fetch data from API
           RESPONSE=$(curl -s -w "\n%{http_code}" "${API_URL}/${CURRENT_DATE}?access_key=${API_KEY}&base=${BASE_CURRENCY}")
@@ -65,6 +68,7 @@ jobs:
           # Check HTTP status
           if [ "${HTTP_CODE}" != "200" ]; then
             echo "Error: HTTP request failed with status ${HTTP_CODE}"
+            echo "Response: ${BODY}"
             exit 1
           fi
           
@@ -77,22 +81,25 @@ jobs:
           fi
           
           # Extract and save only the rates data
-          echo "${BODY}" | jq '.rates' > "${FILE_PATH}"
+          echo "${BODY}" | jq -S '.rates' > "${FILE_PATH}"
           
           echo "Successfully saved currency data to ${FILE_PATH}"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
       
       - name: Create Pull Request
+        if: steps.fetch.outputs.has_changes == 'true'
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ github.token }}
-          commit-message: "chore: update currency data"
+          commit-message: 'chore: update currency data for ${{ steps.fetch.outputs.date }}'
           branch: currency-update-${{ github.run_number }}
           delete-branch: true
-          title: "Update currency data"
+          title: 'Update currency data for ${{ steps.fetch.outputs.date }}'
           body: |
             Automated currency exchange rate update.
             
+            - Date: ${{ steps.fetch.outputs.date }}
             - Base Currency: EUR
             - Run: #${{ github.run_number }}
             
@@ -105,4 +112,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
-          gh pr merge --auto --squash "$PR_NUMBER"
+          gh pr merge --auto --squash --delete-branch "$PR_NUMBER"
