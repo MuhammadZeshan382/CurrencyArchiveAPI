@@ -2,152 +2,74 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - master
-      - main  # Supporting both master and main branches
-    paths:
-      - 'src/**'
-      - '.github/workflows/ci-cd-pipeline.yml'
-      - 'Directory.Build.props'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
-  id-token: write
   contents: write
+  packages: write
 
 env:
   DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/currencyarchiveapi
 
 jobs:
-  version:
-    name: Calculate Version
+  extract-version:
+    name: Extract Version
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
+      tag_name: ${{ steps.version.outputs.tag_name }}
       version: ${{ steps.version.outputs.version }}
-      version_tag: ${{ steps.version.outputs.version_tag }}
-      build_number: ${{ steps.version.outputs.build_number }}
+      assembly_version: ${{ steps.version.outputs.assembly_version }}
+      commit_count: ${{ steps.version.outputs.commit_count }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for tags
-      
-      - name: Calculate version from tags
-        id: version
-        run: |
-          # Get the latest tag or default to 1.0.0
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
-          
-          # Remove 'v' prefix if present
-          VERSION_RAW=${LATEST_TAG#v}
-          
-          # Extract only the first 3 parts (Major.Minor.Patch) to handle corrupted tags
-          VERSION=$(echo "$VERSION_RAW" | cut -d. -f1-3)
-          
-          # Get build number (total commits)
-          BUILD_NUMBER=$(git rev-list --count HEAD)
-          
-          # Create version tag: Major.Minor.Patch.BuildNumber
-          VERSION_TAG="${VERSION}.${BUILD_NUMBER}"
-          
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
-          echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
-          
-          echo "Version: ${VERSION}"
-          echo "Build Number: ${BUILD_NUMBER}"
-          echo "Full Version Tag: ${VERSION_TAG}"
-
-  update-version:
-    name: Update Project Version
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: [version, build-and-push]
-    if: success()
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
       
-      - name: Verify Git configuration
+      - name: Extract and validate version from tag
+        id: version
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-      
-      - name: Update Directory.Build.props
-        run: |
-          VERSION="${{ needs.version.outputs.version }}"
-          BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
+          # Extract tag name (e.g., v1.0.0)
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "Tag name: ${TAG_NAME}"
           
-          echo "Raw VERSION from tag: ${VERSION}"
-          echo "Raw BUILD_NUMBER: ${BUILD_NUMBER}"
+          # Remove 'v' prefix to get version (e.g., 1.0.0)
+          VERSION="${TAG_NAME#v}"
           
-          # Validate version is not empty
-          if [ -z "$VERSION" ]; then
-            echo "Error: VERSION is empty"
+          # Validate version format (must be X.Y.Z)
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid version format. Expected X.Y.Z, got: ${VERSION}"
             exit 1
           fi
           
-          if [ -z "$BUILD_NUMBER" ]; then
-            echo "Error: BUILD_NUMBER is empty"
-            exit 1
-          fi
+          # Get commit count for 4-digit assembly version
+          COMMIT_COUNT=$(git rev-list --count HEAD)
           
-          # Split version into parts (e.g., 1.0.0 -> 1, 0, 0)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          # Create 4-digit assembly version: Major.Minor.Patch.CommitCount
+          ASSEMBLY_VERSION="${VERSION}.${COMMIT_COUNT}"
           
-          # Ensure we have valid numeric values
-          if ! [[ "$MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$MINOR" =~ ^[0-9]+$ ]] || ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
-            echo "Error: Invalid version components. MAJOR=$MAJOR, MINOR=$MINOR, PATCH=$PATCH"
-            exit 1
-          fi
+          # Set outputs
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "assembly_version=${ASSEMBLY_VERSION}" >> $GITHUB_OUTPUT
+          echo "commit_count=${COMMIT_COUNT}" >> $GITHUB_OUTPUT
           
-          # Create 4-part version: Major.Minor.Patch.BuildNumber
-          ASSEMBLY_VERSION="${MAJOR}.${MINOR}.${PATCH}.${BUILD_NUMBER}"
-          
-          echo "Cleaned VERSION: ${VERSION}"
-          echo "VersionPrefix: ${VERSION}"
-          echo "AssemblyVersion: ${ASSEMBLY_VERSION}"
-          
-          # Update VersionPrefix (keeps 3-part semantic version)
-          sed -i "s|<VersionPrefix>.*</VersionPrefix>|<VersionPrefix>${VERSION}</VersionPrefix>|g" Directory.Build.props
-          
-          # Update AssemblyVersion (4-part version with build number)
-          sed -i "s|<AssemblyVersion>.*</AssemblyVersion>|<AssemblyVersion>${ASSEMBLY_VERSION}</AssemblyVersion>|g" Directory.Build.props
-          
-          # Update FileVersion (4-part version with build number)
-          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>${ASSEMBLY_VERSION}</FileVersion>|g" Directory.Build.props
-          
-          echo "Updated Directory.Build.props:"
-          cat Directory.Build.props
-      
-      - name: Commit version changes
-        run: |
-          if git diff --quiet Directory.Build.props; then
-            echo "No version changes to commit"
-          else
-            git add Directory.Build.props
-            git commit -m "chore: bump version to ${{ needs.version.outputs.version_tag }} [skip ci]"
-            git push
-            echo "Version changes committed and pushed"
-          fi
+          # Display results
+          echo "Tag: ${TAG_NAME}"
+          echo "Version (3-digit): ${VERSION}"
+          echo "Assembly Version (4-digit): ${ASSEMBLY_VERSION}"
+          echo "Commit Count: ${COMMIT_COUNT}"
 
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [version]
+    needs: extract-version
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-      
-      - name: Pull latest changes
-        run: |
-          git pull origin ${{ github.ref_name }}
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -158,40 +80,82 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ needs.version.outputs.version_tag }}
-            type=raw,value=latest
-      
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./src/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.extract-version.outputs.version }}
+            ${{ env.DOCKER_IMAGE_NAME }}:latest
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
           build-args: |
             BUILD_CONFIGURATION=Release
       
-      - name: Image digest
+      - name: Docker image built successfully
         run: |
-          echo "Docker image built and pushed successfully!"
+          echo "Docker image built and pushed successfully"
           echo "Image: ${{ env.DOCKER_IMAGE_NAME }}"
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Version: ${{ needs.extract-version.outputs.version }}"
 
+  update-version:
+    name: Update Project Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [extract-version, build-and-push]
+    if: success()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Update Directory.Build.props
+        run: |
+          VERSION="${{ needs.extract-version.outputs.version }}"
+          ASSEMBLY_VERSION="${{ needs.extract-version.outputs.assembly_version }}"
+          
+          echo "Updating Directory.Build.props"
+          echo "VersionPrefix: ${VERSION}"
+          echo "AssemblyVersion: ${ASSEMBLY_VERSION}"
+          echo "FileVersion: ${ASSEMBLY_VERSION}"
+          
+          # Update VersionPrefix (3-digit version from tag)
+          sed -i "s|<VersionPrefix>.*</VersionPrefix>|<VersionPrefix>${VERSION}</VersionPrefix>|g" Directory.Build.props
+          
+          # Update AssemblyVersion (4-digit version with commit count)
+          sed -i "s|<AssemblyVersion>.*</AssemblyVersion>|<AssemblyVersion>${ASSEMBLY_VERSION}</AssemblyVersion>|g" Directory.Build.props
+          
+          # Update FileVersion (4-digit version with commit count)
+          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>${ASSEMBLY_VERSION}</FileVersion>|g" Directory.Build.props
+          
+          echo "Updated Directory.Build.props:"
+          grep -E "(VersionPrefix|AssemblyVersion|FileVersion)" Directory.Build.props
+      
+      - name: Commit and push version changes
+        run: |
+          if git diff --quiet Directory.Build.props; then
+            echo "No version changes to commit"
+          else
+            git add Directory.Build.props
+            git commit -m "chore: update version to ${{ needs.extract-version.outputs.version }} (assembly: ${{ needs.extract-version.outputs.assembly_version }}) [skip ci]"
+            git push origin HEAD:${{ github.event.repository.default_branch }}
+            echo "Version changes committed and pushed"
+          fi
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [version, update-version]
+    needs: [extract-version, build-and-push, update-version]
     if: success()
     steps:
       - name: Checkout code
@@ -200,115 +164,105 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
       
-      - name: Pull latest changes
-        run: |
-          git pull origin ${{ github.ref_name }}
-      
       - name: Generate release notes
         id: release_notes
         run: |
-          VERSION_TAG="v${{ needs.version.outputs.version_tag }}"
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG="${{ needs.extract-version.outputs.tag_name }}"
+          
+          # Find previous tag
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^${CURRENT_TAG}$" | head -n1 2>/dev/null || echo "")
           
           if [ -z "$PREVIOUS_TAG" ]; then
+            # No previous tag, use first commit
             PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+            echo "Generating release notes from initial commit to ${CURRENT_TAG}"
+          else
+            echo "Generating release notes from ${PREVIOUS_TAG} to ${CURRENT_TAG}"
           fi
-          
-          echo "Generating release notes from $PREVIOUS_TAG to HEAD"
           
           # Initialize changelog
           CHANGELOG="## What's Changed"$'\n\n'
           
-          # Get commits since last tag grouped by type
-          FEATURES=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^feat" || echo "")
-          FIXES=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^fix" || echo "")
-          PERF=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^perf" || echo "")
-          REFACTOR=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^refactor" || echo "")
-          DOCS=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^docs" || echo "")
-          CHORE=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^chore" --invert-grep --grep="skip ci" || echo "")
+          # Get commits grouped by conventional commit type
+          FEATURES=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --grep="^feat" --grep="^feat:" --grep="^feat(" 2>/dev/null || echo "")
+          FIXES=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --grep="^fix" --grep="^fix:" --grep="^fix(" 2>/dev/null || echo "")
+          PERF=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --grep="^perf" --grep="^perf:" --grep="^perf(" 2>/dev/null || echo "")
+          REFACTOR=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --grep="^refactor" --grep="^refactor:" --grep="^refactor(" 2>/dev/null || echo "")
+          DOCS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --grep="^docs" --grep="^docs:" --grep="^docs(" 2>/dev/null || echo "")
           
           # Build changelog sections
           if [ -n "$FEATURES" ]; then
-            CHANGELOG="$CHANGELOG### Features"$'\n'"$FEATURES"$'\n\n'
+            CHANGELOG="${CHANGELOG}### Features"$'\n'"${FEATURES}"$'\n\n'
           fi
           
           if [ -n "$FIXES" ]; then
-            CHANGELOG="$CHANGELOG### Bug Fixes"$'\n'"$FIXES"$'\n\n'
+            CHANGELOG="${CHANGELOG}### Bug Fixes"$'\n'"${FIXES}"$'\n\n'
           fi
           
           if [ -n "$PERF" ]; then
-            CHANGELOG="$CHANGELOG### Performance Improvements"$'\n'"$PERF"$'\n\n'
+            CHANGELOG="${CHANGELOG}### Performance Improvements"$'\n'"${PERF}"$'\n\n'
           fi
           
           if [ -n "$REFACTOR" ]; then
-            CHANGELOG="$CHANGELOG### Code Refactoring"$'\n'"$REFACTOR"$'\n\n'
+            CHANGELOG="${CHANGELOG}### Code Refactoring"$'\n'"${REFACTOR}"$'\n\n'
           fi
           
           if [ -n "$DOCS" ]; then
-            CHANGELOG="$CHANGELOG### Documentation"$'\n'"$DOCS"$'\n\n'
+            CHANGELOG="${CHANGELOG}### Documentation"$'\n'"${DOCS}"$'\n\n'
           fi
           
           # If no categorized commits found, show all commits
           if [ -z "$FEATURES" ] && [ -z "$FIXES" ] && [ -z "$PERF" ] && [ -z "$REFACTOR" ] && [ -z "$DOCS" ]; then
-            ALL_COMMITS=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges || echo "")
+            ALL_COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges 2>/dev/null || echo "")
             if [ -n "$ALL_COMMITS" ]; then
-              CHANGELOG="$CHANGELOG### All Changes"$'\n'"$ALL_COMMITS"$'\n\n'
+              CHANGELOG="${CHANGELOG}### All Changes"$'\n'"${ALL_COMMITS}"$'\n\n'
             else
-              CHANGELOG="$CHANGELOG- Initial release"$'\n\n'
+              CHANGELOG="${CHANGELOG}- Initial release"$'\n\n'
             fi
           fi
           
-          # Save to file for multiline output
+          # Save to file
           echo "$CHANGELOG" > release_notes.md
           
-          # Set output using proper delimiter
+          # Set output using heredoc
           {
             echo 'notes<<EOF'
             cat release_notes.md
             echo EOF
           } >> $GITHUB_OUTPUT
       
-      - name: Create Git tag
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          TAG="v${{ needs.version.outputs.version_tag }}"
-          
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists"
-          else
-            git tag -a "$TAG" -m "Release version ${{ needs.version.outputs.version_tag }}"
-            git push origin "$TAG"
-            echo "Created and pushed tag: $TAG"
-          fi
-      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.version.outputs.version_tag }}
-          name: Release v${{ needs.version.outputs.version_tag }}
+          tag_name: ${{ needs.extract-version.outputs.tag_name }}
+          name: Release ${{ needs.extract-version.outputs.tag_name }}
           body: |
-            ## Release v${{ needs.version.outputs.version_tag }}
+            ## Release ${{ needs.extract-version.outputs.tag_name }}
             
             ${{ steps.release_notes.outputs.notes }}
             
             ---
             
             ### Build Information
-            - **Docker Image**: `mzeshawn/currencyarchiveapi:${{ needs.version.outputs.version_tag }}`
-            - **Build Commit**: `${{ github.sha }}`
+            - **Version**: `${{ needs.extract-version.outputs.version }}`
+            - **Assembly Version**: `${{ needs.extract-version.outputs.assembly_version }}`
+            - **Docker Image**: `${{ env.DOCKER_IMAGE_NAME }}:${{ needs.extract-version.outputs.version }}`
+            - **Commit**: `${{ github.sha }}`
+            - **Commit Count**: `${{ needs.extract-version.outputs.commit_count }}`
             
-            ### Docker Image
+            ### Docker Usage
             ```bash
-            docker pull mzeshawn/currencyarchiveapi:${{ needs.version.outputs.version_tag }}
-            docker run -p 8080:8080 mzeshawn/currencyarchiveapi:${{ needs.version.outputs.version_tag }}
+            # Pull the image
+            docker pull ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.extract-version.outputs.version }}
+            
+            # Run the container
+            docker run -p 8080:8080 ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.extract-version.outputs.version }}
             ```
             
             ### Links
             - [Docker Hub](https://hub.docker.com/r/mzeshawn/currencyarchiveapi)
+            - [Documentation](https://github.com/${{ github.repository }})
           draft: false
           prerelease: false
-          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
