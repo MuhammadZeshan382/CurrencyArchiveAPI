@@ -91,7 +91,7 @@ jobs:
           delete-branch: true
           title: "Update currency data for $(date -u +"%Y-%m-%d")"
           body: |
-            Automated currency exchange rate update
+            Automated currency exchange rate update.
             
             - Date: $(date -u +"%Y-%m-%d")
             - Base Currency: EUR
