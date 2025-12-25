@@ -112,4 +112,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
-          gh pr merge --auto --squash --delete-branch "$PR_NUMBER"
+          gh pr merge --auto --rebase --delete-branch "$PR_NUMBER"
