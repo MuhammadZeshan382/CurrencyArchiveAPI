@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ github.token }}
       
       - name: Fetch and save currency data
         env:
@@ -85,7 +85,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ github.token }}
           commit-message: "chore: update currency data"
           branch: currency-update-${{ github.run_number }}
           delete-branch: true
@@ -102,7 +102,7 @@ jobs:
       - name: Enable auto-merge for PR
         if: steps.cpr.outputs.pull-request-number != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
           gh pr merge --auto --squash "$PR_NUMBER"
