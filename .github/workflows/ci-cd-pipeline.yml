@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 env:
   DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/currencyarchiveapi
@@ -292,4 +293,4 @@ jobs:
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
