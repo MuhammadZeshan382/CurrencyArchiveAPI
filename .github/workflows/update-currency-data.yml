@@ -23,8 +23,8 @@ jobs:
       
       - name: Fetch and save currency data
         env:
-          API_KEY: ${{ secrets.CURRENCY_API_KEY }}
-          API_URL: ${{ secrets.CURRENCY_API_URL }}
+          API_KEY: ${{ secrets.CURRENCY_KEY }}
+          API_URL: ${{ secrets.CURRENCY_URL }}
         run: |
           # Configuration
           BASE_CURRENCY="EUR"
@@ -32,7 +32,7 @@ jobs:
           # Get current date in UTC
           CURRENT_DATE=$(date -u +"%Y-%m-%d")
           YEAR=$(date -u +"%Y")
-          MONTH=$(date -u +"%m")
+          MONTH=$(date -u +"%B")
           FILENAME=$(date -u +"%d-%m-%Y.json")
           
           # Construct directory path
@@ -54,18 +54,28 @@ jobs:
           fi
           
           # Fetch data from API
-          RESPONSE=$(curl -s "${API_URL}/${CURRENT_DATE}?access_key=${API_KEY}&base=${BASE_CURRENCY}")
+          RESPONSE=$(curl -s -w "\n%{http_code}" "${API_URL}/${CURRENT_DATE}?access_key=${API_KEY}&base=${BASE_CURRENCY}")
+          
+          # Extract HTTP status code
+          HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
+          BODY=$(echo "${RESPONSE}" | sed '$d')
+          
+          # Check HTTP status
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "Error: HTTP request failed with status ${HTTP_CODE}"
+            exit 1
+          fi
           
           # Check if API request was successful
-          SUCCESS=$(echo "${RESPONSE}" | jq -r '.success // false')
+          SUCCESS=$(echo "${BODY}" | jq -r '.success // false')
           if [ "${SUCCESS}" != "true" ]; then
-            ERROR_INFO=$(echo "${RESPONSE}" | jq -r '.error.info // "Unknown error"')
-            echo "Error: ${ERROR_INFO}"
+            ERROR_INFO=$(echo "${BODY}" | jq -r '.error.info // "Unknown error"')
+            echo "Error: API returned - ${ERROR_INFO}"
             exit 1
           fi
           
           # Extract and save only the rates data
-          echo "${RESPONSE}" | jq '.rates' > "${FILE_PATH}"
+          echo "${BODY}" | jq '.rates' > "${FILE_PATH}"
           
           echo "Successfully saved currency data to ${FILE_PATH}"
       
