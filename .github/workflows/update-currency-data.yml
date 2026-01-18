@@ -1,9 +1,12 @@
 name: Update Currency Data
 
 on:
-  # Run every day at 00:01 UTC
+  # Run every day at 00:30 UTC to fetch previous day's finalized rates
+  # Best practice: Fetch yesterday's data after it's fully settled
+  # Timezone: UTC (GitHub Actions always runs in UTC)
+  # Avoids high-load periods (top of hour) for better reliability
   schedule:
-    - cron: '1 0 * * *'
+    - cron: '30 0 * * *'
   
   # Allow manual trigger for testing
   workflow_dispatch:
@@ -34,12 +37,16 @@ jobs:
           # Configuration
           BASE_CURRENCY="EUR"
           
-          # Get current date in UTC
-          CURRENT_DATE=$(date -u +"%Y-%m-%d")
+          # Get yesterday's date to fetch finalized rates
+          # Using 'date -d' for yesterday ensures we get fully settled forex data
+          CURRENT_DATE=$(date -u -d 'yesterday' +"%Y-%m-%d")
           echo "date=${CURRENT_DATE}" >> $GITHUB_OUTPUT
-          YEAR=$(date -u +"%Y")
-          MONTH=$(date -u +"%B")
-          FILENAME=$(date -u +"%d-%m-%Y.json")
+          YEAR=$(date -u -d 'yesterday' +"%Y")
+          MONTH=$(date -u -d 'yesterday' +"%B")
+          FILENAME=$(date -u -d 'yesterday' +"%d-%m-%Y.json")
+          
+          echo "Timezone: UTC (GitHub Actions)"
+          echo "Fetching data for: ${CURRENT_DATE} (previous day's finalized rates)"
           
           # Construct directory path
           DATA_DIR="src/Data/${BASE_CURRENCY}/${YEAR}/${MONTH}"
