@@ -1,7 +1,7 @@
 # CurrencyArchiveAPI
 
 [![CI/CD Pipeline](https://github.com/MuhammadZeshan382/CurrencyArchiveAPI/actions/workflows/ci-cd-pipeline.yml/badge.svg)](https://github.com/MuhammadZeshan382/CurrencyArchiveAPI/actions/workflows/ci-cd-pipeline.yml)
-[![Version](https://img.shields.io/badge/Version-1.0.0.56-blue.svg?logo=github&logoColor=white)](https://github.com/MuhammadZeshan382/CurrencyArchiveAPI/releases/latest)
+[![Version](https://img.shields.io/github/v/release/MuhammadZeshan382/CurrencyArchiveAPI?logo=github&logoColor=white&color=blue)](https://github.com/MuhammadZeshan382/CurrencyArchiveAPI/releases/latest)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![Docker Version](https://img.shields.io/docker/v/mzeshawn/currencyarchiveapi?sort=semver&logo=docker&logoColor=white&label=Docker&color=2496ED)](https://hub.docker.com/r/mzeshawn/currencyarchiveapi)
 [![Swagger](https://img.shields.io/badge/API-Swagger-85EA2D?logo=swagger&logoColor=white)](https://currencyapi.vitalmedx.com)
