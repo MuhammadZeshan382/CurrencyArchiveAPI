@@ -2,13 +2,13 @@
 
   <!-- Version: Displayed in API responses and logs -->
   <PropertyGroup>
-    <VersionPrefix>1.0.1</VersionPrefix>
+    <VersionPrefix>1.0.2</VersionPrefix>
   </PropertyGroup>
 
   <!-- Assembly Version: For .NET runtime compatibility (Major.Minor.Build.Revision) -->
   <PropertyGroup>
-    <AssemblyVersion>1.0.1.77</AssemblyVersion>
-    <FileVersion>1.0.1.77</FileVersion>
+    <AssemblyVersion>1.0.2.290</AssemblyVersion>
+    <FileVersion>1.0.2.290</FileVersion>
   </PropertyGroup>
 
   <!-- Project Information: Shown in assembly properties -->
